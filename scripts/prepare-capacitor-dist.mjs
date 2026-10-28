@@ -69,6 +69,13 @@ const iosAppDir = path.resolve('ios/App/App');
 if (fs.existsSync(iosAppDir)) {
   fs.copyFileSync(path.resolve('capacitor.config.json'), path.join(iosAppDir, 'capacitor.config.json'));
   console.log('Successfully synced capacitor.config.json to ios/App/App/capacitor.config.json');
+
+  const configXmlPath = path.join(iosAppDir, 'config.xml');
+  if (!fs.existsSync(configXmlPath)) {
+    const minimalXml = `<?xml version='1.0' encoding='utf-8'?>\n<widget version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">\n  <access origin="*" />\n</widget>\n`;
+    fs.writeFileSync(configXmlPath, minimalXml, 'utf-8');
+    console.log('Created missing ios/App/App/config.xml for Xcode build');
+  }
 }
 
 // Automatically purge stale android assets and copy fresh build files
