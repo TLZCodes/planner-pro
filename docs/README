@@ -1,0 +1,61 @@
+# AYXA Planner Pro — Educational Showcase Studio
+
+Project name: **AYXA Planner Pro — Educational Showcase**
+
+This directory is the film studio for the AYXA Planner Pro application.
+
+Two things live here:
+
+1. **The client walkthrough tour — the current deliverable.** A silent, driven screen
+   recording of the whole app, so the client can see the product and the changes without
+   reading a pitch. One stop per module, module label drawn locally in the edit.
+2. **The educational showcase assets — built, not shipped.** 24 scene documents, 27 captured
+   stills, shot cards and passports. The stills are still useful as documentation, and the
+   narration stage exists, but the narrated film is not the deliverable.
+
+Neither is an advertisement. Every feature shown is a real screen captured from the running app.
+
+## Folder map
+
+| Path | Purpose |
+|---|---|
+| `assets/characters/` | Reserved. This film has no human characters; the persistence surfaces are registered as props. |
+| `assets/locations/` | One captured screen per module. Each is a location with its own passport. |
+| `assets/props/` | Graphic devices: `@phone_frame`, `@card_paper`, `@brand_mark`, `@shell_bottom_nav`, `@stylus`. |
+| `prompts/` | One shot-card file per scene, and one versioned generation prompt per shot. |
+| `generations/` | Raw unapproved attempts, one folder per scene. |
+| `selects/` | Approved takes only, one folder per scene. |
+| `edit/` | Timeline assembly. `edit/tour/` holds the recordings, `edit/fonts/` the `drawtext` fonts, `edit/qc/` the QC frames. |
+| `color/` | Grade, contrast and RTL/typography passes. |
+| `sound/` | Narration, ambience bed and mix. Not used by the client tour, which is silent by design. |
+| `master/` | Final deliverables. |
+| `docs/` | Breakdown, bible, registry, generation log, text tasks. |
+
+## The three studio laws
+
+1. **Only `/selects/` is visible to the edit.**
+2. **Nobody but the prompt engineer enters `/generations/`.**
+3. **Reference files are never renamed; a new version is a new file.**
+
+`/generations/` holds raw attempts. `/selects/` holds approved takes.
+There are no exceptions to these three laws.
+
+## Why the laws matter here
+
+A generated or captured frame is cheap and disposable; an *approved* frame is a contract.
+When the edit can only see `/selects/`, a bad take can never leak into the master by accident.
+Because the screens in this film are captured from the live application, law 3 is what keeps
+every caption reproducible: if a module changes, the old capture keeps its name and the new
+capture gets a new one, so the visual bible always describes a file that still exists.
+
+## Pipeline
+
+`setup → studio-init → film-breakdown → reference-board → asset-passport → stress-test → shot-prompt`
+
+- `setup` — connect the tools and share the configuration across agents.
+- `studio-init` — scaffold this tree, the templates and the laws.
+- `film-breakdown` — turn the module inventory into scenes and shot cards.
+- `reference-board` — define approved references, captions and bans.
+- `asset-passport` — write verbatim descriptors and reference-sheet prompts.
+- `stress-test` — test each draft asset and lock only the repeatable ones.
+- `shot-prompt` — turn a shot card plus locked passports into the fixed prompt.

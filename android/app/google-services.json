@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "687106521136",
+    "project_id": "aisha-planner",
+    "storage_bucket": "aisha-planner.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:687106521136:android:9da667b2d75c5d23c655f5",
+        "android_client_info": {
+          "package_name": "com.ayxaplanner.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "687106521136-7j4cdc3vh4dgs14hithuv2i5qm6tmhl2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZX_Pf9wXZ1nuRza0tUzp37PWPBZtgBRY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "687106521136-7j4cdc3vh4dgs14hithuv2i5qm6tmhl2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:687106521136:android:0d6ab5111ba0deadc655f5",
+        "android_client_info": {
+          "package_name": "com.dreamplanner.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "687106521136-7j4cdc3vh4dgs14hithuv2i5qm6tmhl2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZX_Pf9wXZ1nuRza0tUzp37PWPBZtgBRY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "687106521136-7j4cdc3vh4dgs14hithuv2i5qm6tmhl2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AYXA Planner Pro — 30-Second Fast Promo Reel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f0c20;
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-h: 100vh;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  .video-container {
+    position: relative;
+    width: 360px;
+    height: 640px; /* 9:16 vertical video frame */
+    border-radius: 36px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(255, 20, 147, 0.35), 0 0 0 8px #261f3d;
+    background: linear-gradient(135deg, #180e29 0%, #2a1b40 100%);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* TOP OVERLAY BANNER */
+  .top-banner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+  }
+  .app-title {
+    font-size: 16px;
+    font-weight: 800;
+    background: linear-gradient(90deg, #ff69b4, #ff1493, #ba55d3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 0.5px;
+  }
+  .timer-badge {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffd700;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* SCREEN SLIDESHOW */
+  .slides-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  .slide-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transform: scale(1.06);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  .slide-img.active {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* BOTTOM CAPTION OVERLAY */
+  .bottom-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 24px 20px;
+    background: linear-gradient(0deg, rgba(15, 12, 32, 0.95) 0%, rgba(15, 12, 32, 0.7) 70%, rgba(0,0,0,0) 100%);
+    z-index: 50;
+    text-align: center;
+  }
+  .feature-badge {
+    display: inline-block;
+    background: linear-gradient(90deg, #ff1493, #da70d6);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 12px;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .caption-text {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.35;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  }
+
+  /* PROGRESS BAR AT TOP */
+  .progress-track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    z-index: 100;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ff1493, #ffd700);
+    transition: width 0.1s linear;
+  }
+
+  /* CONTROLS */
+  .controls {
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+  }
+  .btn {
+    background: linear-gradient(135deg, #ff1493, #ba55d3);
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(255, 20, 147, 0.4);
+    transition: transform 0.15s;
+  }
+  .btn:active { transform: scale(0.96); }
+</style>
+</head>
+<body>
+
+  <div class="video-container">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="top-banner">
+      <div class="app-title">✨ AYXA Planner Pro</div>
+      <div class="timer-badge" id="timerDisplay">00:00 / 00:30</div>
+    </div>
+
+    <div class="slides-wrapper" id="slidesWrapper">
+      <!-- Images dynamically inserted -->
+    </div>
+
+    <div class="bottom-caption">
+      <div class="feature-badge" id="featureBadge">AUTHENTICATION</div>
+      <div class="caption-text" id="captionText">Your softest, most productive era starts here 🌸</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="playBtn">▶️ Play 30s Fast Reel</button>
+  </div>
+
+<script>
+  const screens = [
+    { file: "/screenshots/01_login.png", badge: "01. AUTH & PRIVACY", text: "100% Private local data storage with quick Guest login 🌸", duration: 1.5 },
+    { file: "/screenshots/03_dashboard.png", badge: "02. DAILY POWER DASHBOARD", text: "Level up with XP, daily Islamic Dhikr & motivational quotes ✨", duration: 2.0 },
+    { file: "/screenshots/04_tasks.png", badge: "03. EISENHOWER MATRIX", text: "Prioritize tasks by High, Medium & Low importance 📋", duration: 1.8 },
+    { file: "/screenshots/05_habits.png", badge: "04. HABIT STREAKS", text: "Track 7-day habits & build unstoppable streaks 🔥", duration: 1.8 },
+    { file: "/screenshots/06_goals.png", badge: "05. GOALS & OKRs", text: "Turn long-term dreams into completed milestones 🎯", duration: 1.8 },
+    { file: "/screenshots/07_learning.png", badge: "06. ACADEMIC HUB", text: "Log study hours, track book reading & course lessons 📚", duration: 2.0 },
+    { file: "/screenshots/08_gamification.png", badge: "07. SM-2 FLASHCARDS", text: "Master decks using scientific spaced repetition intervals 🧠", duration: 2.2 },
+    { file: "/screenshots/09_finance.png", badge: "08. FINANCE LEDGER", text: "Track income vs expenses with real-time net balance 💸", duration: 1.8 },
+    { file: "/screenshots/10_selfcare.png", badge: "09. SELF-CARE RITUALS", text: "Nurture daily hydration, skincare & mindfulness 🧖‍♀️", duration: 1.8 },
+    { file: "/screenshots/11_pixels.png", badge: "10. YEAR IN PIXELS", text: "Color your mood grid every day of the year 🎨", duration: 1.6 },
+    { file: "/screenshots/12_travel.png", badge: "11. TRAVEL PLANNER", text: "Plan dream trips & track savings progress ✈️", duration: 1.6 },
+    { file: "/screenshots/13_focus.png", badge: "12. FOCUS TIMER", text: "Deep work sessions with custom ambient sounds ⏱️", duration: 1.6 },
+    { file: "/screenshots/14_business.png", badge: "13. BUSINESS MATRIX", text: "Manage clients, projects & revenue targets 💼", duration: 1.6 },
+    { file: "/screenshots/15_achievements.png", badge: "14. BADGES HUB", text: "Unlock achievement badges & level up your rank 🏆", duration: 1.6 },
+    { file: "/screenshots/18_ai_assistant.png", badge: "15. AI ASSISTANT", text: "AI-powered schedule optimization & habit coaching 🤖", duration: 2.0 },
+    { file: "/screenshots/19_bujo_studio.png", badge: "16. BULLET JOURNAL STUDIO", text: "Pastel hand-drawn canvas with stickers & brushes 🖌️", duration: 2.2 },
+    { file: "/screenshots/03_dashboard.png", badge: "17. AYXA PLANNER PRO", text: "Transform your daily routine. Available on Android! 🌟", duration: 1.5 }
+  ];
+
+  const wrapper = document.getElementById("slidesWrapper");
+  const badgeEl = document.getElementById("featureBadge");
+  const textEl = document.getElementById("captionText");
+  const progressFill = document.getElementById("progressFill");
+  const timerDisplay = document.getElementById("timerDisplay");
+  const playBtn = document.getElementById("playBtn");
+
+  // Generate slide img elements
+  screens.forEach((s, idx) => {
+    const img = document.createElement("img");
+    img.src = s.file;
+    img.className = "slide-img" + (idx === 0 ? " active" : "");
+    img.id = "slide-" + idx;
+    wrapper.appendChild(img);
+  });
+
+  let currentIdx = 0;
+  let timerId = null;
+  let startTime = 0;
+
+  function runReel() {
+    let totalSec = 0;
+    const totalDuration = screens.reduce((a, b) => a + b.duration, 0);
+
+    function nextStep(idx) {
+      if (idx >= screens.length) {
+        idx = 0; // loop
+      }
+      currentIdx = idx;
+
+      // Update slide images
+      document.querySelectorAll(".slide-img").forEach((el, i) => {
+        el.classList.toggle("active", i === idx);
+      });
+
+      // Update captions
+      const item = screens[idx];
+      badgeEl.textContent = item.badge;
+      textEl.textContent = item.text;
+
+      // Calculate elapsed time ratio
+      let elapsedSoFar = 0;
+      for (let i = 0; i < idx; i++) elapsedSoFar += screens[i].duration;
+
+      const stepMs = item.duration * 1000;
+
+      // Schedule next frame
+      timerId = setTimeout(() => nextStep(idx + 1), stepMs);
+    }
+
+    // Progress bar clock
+    const clockId = setInterval(() => {
+      if (!startTime) startTime = Date.now();
+      const elapsed = (Date.now() - startTime) / 1000;
+      const pct = Math.min(100, (elapsed / totalDuration) * 100);
+      progressFill.style.width = pct + "%";
+
+      const secs = Math.min(30, Math.floor(elapsed));
+      timerDisplay.textContent = `00:${secs < 10 ? "0" + secs : secs} / 00:30`;
+
+      if (elapsed >= totalDuration) {
+        startTime = Date.now();
+      }
+    }, 100);
+
+    nextStep(0);
+  }
+
+  playBtn.addEventListener("click", () => {
+    if (timerId) clearTimeout(timerId);
+    startTime = Date.now();
+    runReel();
+    playBtn.textContent = "🔄 Replay 30s Fast Reel";
+  });
+
+  // Auto start on load
+  window.addEventListener("DOMContentLoaded", () => {
+    runReel();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "appId": "com.ayxaplanner.app",
+  "appName": "AYXA Planner Pro",
+  "webDir": ".output/public",
+  "server": {
+    "androidScheme": "https"
+  }
+}

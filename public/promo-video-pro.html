@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AYXA Planner Pro — iPhone 16 Pro Mockup (Chroma Key Green Screen)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #00FF00; /* Pure Chroma Key Green */
+    color: #fff;
+    font-family: system-ui, -apple-system, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* MAIN STAGE */
+  .stage-container {
+    position: relative;
+    width: 420px;
+    height: 750px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* IPHONE 16 PRO MOCKUP FRAME */
+  .phone-frame {
+    position: relative;
+    width: 340px;
+    height: 690px;
+    background: #000;
+    border-radius: 52px;
+    padding: 12px;
+    box-shadow: 
+      0 25px 60px rgba(0, 0, 0, 0.9),
+      0 0 0 2px rgba(255, 255, 255, 0.2);
+    border: 3.5px solid #2a2438;
+    overflow: hidden;
+  }
+
+  /* DYNAMIC ISLAND */
+  .dynamic-island {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 96px;
+    height: 26px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  }
+  .camera-dot { width: 10px; height: 10px; border-radius: 50%; background: #111; border: 1px solid #222; }
+
+  /* PHONE SCREEN DISPLAY */
+  .phone-screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 42px;
+    overflow: hidden;
+    background: #130d24;
+  }
+
+  /* SLIDE CANVAS AND IMAGES */
+  .screen-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transform: scale(1);
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .screen-img.active {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+  <div class="stage-container">
+    <div class="phone-frame">
+      <div class="dynamic-island">
+        <div class="camera-dot"></div>
+      </div>
+      
+      <div class="phone-screen">
+        <div id="slidesContainer"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const story = [
+    { img: "/screenshots/03_dashboard.png", duration: 3.1 },
+    { img: "/screenshots/04_tasks.png", duration: 3.0 },
+    { img: "/screenshots/05_habits.png", duration: 3.0 },
+    { img: "/screenshots/06_goals.png", duration: 3.1 },
+    { img: "/screenshots/07_learning.png", duration: 3.1 },
+    { img: "/screenshots/08_gamification.png", duration: 3.1 },
+    { img: "/screenshots/09_finance.png", duration: 3.1 },
+    { img: "/screenshots/10_selfcare.png", duration: 3.0 },
+    { img: "/screenshots/11_pixels.png", duration: 3.0 },
+    { img: "/screenshots/12_travel.png", duration: 3.0 },
+    { img: "/screenshots/13_focus.png", duration: 3.1 },
+    { img: "/screenshots/18_ai_assistant.png", duration: 3.2 },
+    { img: "/screenshots/19_bujo_studio.png", duration: 3.2 }
+  ];
+
+  const container = document.getElementById("slidesContainer");
+
+  story.forEach((item, idx) => {
+    const el = document.createElement("img");
+    el.src = item.img;
+    el.className = "screen-img" + (idx === 0 ? " active" : "");
+    el.id = "slide-" + idx;
+    container.appendChild(el);
+  });
+
+  let currentIdx = 0;
+  let timerId = null;
+
+  function showSlide(idx) {
+    currentIdx = idx % story.length;
+    const item = story[currentIdx];
+
+    document.querySelectorAll(".screen-img").forEach((img, i) => {
+      img.classList.toggle("active", i === currentIdx);
+    });
+
+    const stepMs = item.duration * 1000;
+    timerId = setTimeout(() => showSlide(currentIdx + 1), stepMs);
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    showSlide(0);
+  });
+</script>
+</body>
+</html>

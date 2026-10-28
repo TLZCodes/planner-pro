@@ -1,0 +1,53 @@
+name: Build iOS App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Web Assets
+        run: npm run build
+
+      - name: Sync Capacitor iOS
+        run: npx cap sync ios
+
+      - name: Build Xcode Project
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package .ipa for Sideloading
+        run: |
+          mkdir -p Payload
+          cp -r build/Build/Products/Debug-iphoneos/App.app Payload/
+          zip -r AYXA_Planner_Pro.ipa Payload
+          rm -rf Payload
+
+      - name: Upload Ready .ipa File
+        uses: actions/upload-artifact@v4
+        with:
+          name: AYXA_Planner_Pro_iOS_Ready
+          path: AYXA_Planner_Pro.ipa
+          if-no-files-found: error

@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Pastel Hello Brio Bullet Journal & Pro Designer Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Caveat:wght@400;600;700&family=DM+Sans:wght@400;500;700&family=Playfair+Display:ital,wght@0,700;1,400&family=Pacifico&display=swap" rel="stylesheet">
+<!-- Libraries for Save as PNG and Save as PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html, body { height:100%; width:100%; overflow:hidden; background:#FAF6F0; font-family:'DM Sans',sans-serif; color:#2B1E1A }
+
+#app { display:flex; flex-direction:column; height:100%; width:100%; overflow:hidden; position:relative; background:#FAF6F0 }
+
+.app-container { flex:1; display:flex; flex-direction:column; height:100%; width:100%; max-width:540px; margin:0 auto; background:#FAF6F0; position:relative; overflow:hidden }
+
+/* TOP TOOLBAR */
+.toolbar-top { background:#FFFDF9; border-bottom:1.5px solid #E8C8B5; padding:6px 10px; display:flex; align-items:center; justify-content:space-between; gap:5px; z-index:200 }
+.tool-icon { width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer; color:#4A3B32; background:#fff; border:1.5px solid #E8C8B5; user-select:none; transition:.15s; flex-shrink:0 }
+.tool-icon:active, .tool-icon.active { background:#F7B7D233; color:#D95389; border-color:#F7B7D2 }
+.tool-btn-save { background:#D95389; color:#fff; border:1.5px solid #D95389; border-radius:10px; padding:0 10px; height:32px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:4px; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(217,83,137,0.25); transition:.15s }
+.tool-btn-save:active { transform:scale(0.95); opacity:0.9 }
+.tool-group { display:flex; gap:4px; align-items:center; flex-shrink:0 }
+.title-input { font-family:'Pacifico',cursive; font-size:16px; font-weight:400; color:#4A3B32; border:none; background:transparent; outline:none; text-align:center; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+
+/* SECONDARY FORMAT BAR */
+#format-bar { background:#FFFDF9; border-bottom:1px solid #E8C8B5; padding:5px 8px; display:flex; align-items:center; gap:5px; overflow-x:auto; z-index:190; -webkit-overflow-scrolling:touch }
+#format-bar::-webkit-scrollbar { display:none }
+.f-select { padding:4px 6px; border-radius:8px; border:1.5px solid #E8C8B5; background:#fff; font-size:11px; font-weight:700; color:#4A3B32; outline:none }
+.f-chip { padding:4px 7px; border-radius:8px; border:1.5px solid #E8C8B5; background:#fff; font-size:11px; font-weight:700; color:#4A3B32; white-space:nowrap; cursor:pointer }
+.f-chip.active { background:#F7B7D2; color:#fff; border-color:#F7B7D2 }
+.color-swatch { width:20px; height:20px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px #D4B896; flex-shrink:0; cursor:pointer; transition:.15s }
+.color-swatch.active { transform:scale(1.25); box-shadow:0 0 0 2px #D95389 }
+
+/* CANVAS WRAPPER */
+#wrap { flex:1; overflow-y:auto; overflow-x:hidden; background:#FAF6F0; position:relative; -webkit-overflow-scrolling:touch }
+.canvas { background:#FAF6F0; background-image:radial-gradient(circle,rgba(180,150,120,0.25) 1.2px,transparent 1.2px); background-size:18px 18px; min-height:1200px; padding:14px 10px 180px 10px; position:relative; transition:background .2s }
+
+/* PAPER TEXTURE MODES */
+.canvas.paper-grid { background-image:linear-gradient(to right, rgba(180,150,120,0.2) 1px, transparent 1px), linear-gradient(to bottom, rgba(180,150,120,0.2) 1px, transparent 1px); background-size:20px 20px }
+.canvas.paper-lined { background-image:linear-gradient(transparent 23px, rgba(180,150,120,0.25) 24px); background-size:100% 24px }
+.canvas.paper-pink { background:#FCE8EC; background-image:radial-gradient(circle,rgba(217,83,137,0.25) 1.2px,transparent 1.2px); background-size:18px 18px }
+.canvas.paper-cream { background:#F5EBE1; background-image:radial-gradient(circle,rgba(160,130,100,0.25) 1.2px,transparent 1.2px); background-size:18px 18px }
+.canvas.paper-night { background:#1C1824; color:#fff; background-image:radial-gradient(circle,rgba(255,255,255,0.2) 1px,transparent 1px); background-size:20px 20px }
+
+svg#svg-layer { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:10 }
+#wrap.mode-draw svg#svg-layer { pointer-events:all; cursor:crosshair }
+
+#tap-marker { position:absolute; width:18px; height:18px; border:2px solid #F7B7D2; border-radius:50%; pointer-events:none; transform:translate(-50%,-50%); display:none; z-index:15; animation:pulse 1.2s infinite }
+@keyframes pulse { 0% { transform:translate(-50%,-50%) scale(1); opacity:1 } 50% { transform:translate(-50%,-50%) scale(1.6); opacity:0.4 } 100% { transform:translate(-50%,-50%) scale(1); opacity:1 } }
+
+/* BLOCKS */
+.block { position:absolute; touch-action:none; z-index:20; border-radius:12px }
+.block-inner { position:relative; border-radius:12px; padding:2px }
+.block.selected .block-inner { outline:2.5px dashed #D95389; outline-offset:3px; box-shadow:0 6px 20px rgba(217,83,137,0.2) }
+
+.block-toolbar { position:absolute; top:-46px; left:0; display:none; gap:4px; background:#2B1E1A; border-radius:12px; padding:4px 8px; z-index:1000; box-shadow:0 6px 18px rgba(0,0,0,0.25); white-space:nowrap }
+.block.selected .block-toolbar { display:flex }
+.tb-btn { height:28px; padding:0 8px; border-radius:8px; background:rgba(255,255,255,0.18); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; gap:3px; cursor:pointer }
+.tb-btn:active { background:rgba(255,255,255,0.35) }
+.tb-btn.tb-drag { background:#D95389; cursor:grab }
+.tb-btn.tb-del { background:#E05555 }
+
+.handle-resize { position:absolute; bottom:-10px; right:-10px; width:26px; height:26px; background:#D95389; border:2px solid #fff; border-radius:50%; display:none; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:bold; z-index:1001; cursor:se-resize; touch-action:none }
+.block.selected .handle-resize { display:flex }
+
+.handle-rotate { position:absolute; top:-10px; right:-10px; width:26px; height:26px; background:#A8E0D8; border:2px solid #fff; border-radius:50%; display:none; align-items:center; justify-content:center; color:#2B1E1A; font-size:12px; font-weight:bold; z-index:1001; cursor:grab; touch-action:none }
+.block.selected .handle-rotate { display:flex }
+
+/* --- PASTEL BULLET JOURNAL STYLED BLOCKS --- */
+.b-banner-day { display:flex; align-items:center; justify-content:center; height:36px; padding:0 16px; border-radius:18px; border:2px solid #2B1E1A; font-family:'Caveat',cursive; font-size:20px; font-weight:700; color:#2B1E1A; box-shadow:2px 3px 0 #2B1E1A; min-width:140px; position:relative; background:#A8E0D8; cursor:pointer; outline:none }
+
+.b-ribbon { position:relative; background:#FDE49C; border:2px solid #2B1E1A; padding:6px 18px; font-family:'Pacifico',cursive; font-size:17px; color:#2B1E1A; text-align:center; min-width:170px; box-shadow:3px 3px 0 #2B1E1A; border-radius:6px; outline:none }
+
+.b-spiral-note { background:#D6F2F5; border:2px solid #2B1E1A; border-radius:16px; padding:24px 12px 12px; position:relative; min-width:170px; box-shadow:3px 4px 0 #2B1E1A }
+.spiral-rings { position:absolute; top:6px; left:12px; right:12px; display:flex; justify-content:space-between }
+.spiral-ring { width:9px; height:11px; border:2px solid #2B1E1A; border-radius:4px; background:#fff }
+.spiral-lines { background-image:linear-gradient(transparent 23px, #2B1E1A22 24px); background-size:100% 24px; min-height:80px; padding:2px 0 }
+.spiral-ta { width:100%; background:transparent; border:none; outline:none; font-family:'Caveat',cursive; font-size:16px; color:#2B1E1A; line-height:22px; resize:none }
+
+.b-washi-todo { background:#F7B7D2; border:2px solid #2B1E1A; border-radius:14px; padding:12px; position:relative; min-width:190px; box-shadow:3px 4px 0 #2B1E1A }
+.washi-tape-top { position:absolute; top:-10px; right:16px; width:40px; height:16px; background:rgba(255,255,255,0.75); border:1.5px solid #2B1E1A; transform:rotate(6deg) }
+.washi-hdr { font-family:'Caveat',cursive; font-size:20px; font-weight:700; color:#2B1E1A; text-align:center; margin-bottom:6px; outline:none }
+.washi-item { display:flex; align-items:center; gap:8px; margin-bottom:5px }
+.washi-circle { width:18px; height:18px; border-radius:50%; border:2px solid #2B1E1A; background:#fff; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold }
+.washi-circle.done { background:#8FAF8A; color:#fff }
+
+.b-card-stacked { background:#FDE49C; border:2px solid #2B1E1A; border-radius:12px; padding:10px 12px; min-width:160px; box-shadow:3px 3px 0 #2B1E1A, 6px 6px 0 #F7B7D2, 6px 6px 0 2px #2B1E1A; font-family:'Caveat',cursive }
+
+.b-badge-num { width:42px; height:50px; display:flex; flex-direction:column; align-items:center; cursor:pointer }
+.badge-circle { width:36px; height:36px; border-radius:50%; border:2px solid #2B1E1A; background:#FDE49C; display:flex; align-items:center; justify-content:center; font-family:'Caveat',cursive; font-size:20px; font-weight:700; color:#2B1E1A; box-shadow:2px 2px 0 #2B1E1A; outline:none }
+.badge-tails { display:flex; gap:5px; margin-top:-3px }
+.badge-tail { width:7px; height:12px; background:#F7B7D2; border:1.5px solid #2B1E1A; clip-path:polygon(0 0, 100% 0, 50% 100%) }
+
+.b-divider-vine { font-size:18px; text-align:center; user-select:none; letter-spacing:3px; color:#2B1E1A; outline:none }
+.b-divider-arrow { font-size:20px; text-align:center; user-select:none; color:#2B1E1A; outline:none }
+
+.b-islamic-salah { background:#E2F0D9; border:2px solid #2B1E1A; border-radius:14px; padding:10px 12px; min-width:190px; box-shadow:3px 4px 0 #2B1E1A }
+.salah-hdr { font-family:'Caveat',cursive; font-size:18px; font-weight:700; color:#2B1E1A; text-align:center; margin-bottom:6px }
+.salah-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; font-family:'Caveat',cursive; font-size:16px; font-weight:600; color:#2B1E1A }
+.salah-check { width:18px; height:18px; border-radius:50%; border:2px solid #2B1E1A; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold }
+.salah-check.done { background:#8FAF8A; color:#fff }
+
+.b-sticker { font-size:38px; text-align:center; user-select:none; outline:none; filter:drop-shadow(1px 2px 0 rgba(0,0,0,0.1)) }
+.b-text { font-family:'Caveat',cursive; font-size:22px; color:#2B1E1A; outline:none; word-break:break-word }
+.b-img img { width:100%; height:100%; object-fit:cover; border-radius:10px; border:2px solid #2B1E1A }
+
+/* BOTTOM TOOLBAR DOCK */
+.bottom-toolbar { background:#FFFDF9; border-top:1.5px solid #E8C8B5; padding:6px 8px; display:flex; justify-content:space-around; align-items:center; z-index:200; box-shadow:0 -4px 14px rgba(0,0,0,0.06); height:54px }
+.btool { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; padding:3px 8px; border-radius:10px; transition:.15s; flex:1 }
+.btool:active, .btool.active { background:#F7B7D225 }
+.btool-icon { font-size:18px; line-height:1 }
+.btool-label { font-size:10px; color:#6B5246; font-family:'DM Sans',sans-serif; font-weight:700 }
+.btool.active .btool-label { color:#D95389 }
+
+/* DRAWERS / POPUPS */
+.drawer { position:fixed; bottom:0; left:0; right:0; z-index:350; background:#FFFDF9; border-top:3.5px solid #E8C8B5; border-radius:24px 24px 0 0; padding:16px 14px 40px 14px; transform:translateY(115%); transition:transform 0.28s cubic-bezier(0.1,0.9,0.2,1); max-height:85vh; overflow-y:auto; box-shadow:0 -8px 30px rgba(0,0,0,0.25); max-width:540px; margin:0 auto }
+.drawer.open { transform:translateY(0) !important; display:block !important }
+.drawer-handle { width:44px; height:5px; background:#E8C8B5; border-radius:3px; margin:0 auto 12px }
+.drawer-title { font-family:'Pacifico',cursive; font-size:19px; color:#2B1E1A; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between }
+.drawer-backdrop { position:fixed; inset:0; z-index:340; background:rgba(0,0,0,0.4); display:none }
+.drawer-backdrop.open { display:block !important }
+
+/* EXPORT OPTIONS CARDS */
+.export-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px }
+.export-card { border:2px solid #2B1E1A; border-radius:16px; background:#fff; padding:12px; cursor:pointer; text-align:center; box-shadow:2px 3px 0 #2B1E1A; transition:.15s; display:flex; flex-direction:column; align-items:center; gap:4px }
+.export-card:active { transform:scale(0.95); background:#FCE8EC }
+.export-card-icon { font-size:26px }
+.export-card-title { font-size:12px; font-weight:700; color:#2B1E1A }
+.export-card-sub { font-size:10px; color:#6B5246 }
+
+.grid-blocks { display:grid; grid-template-columns:repeat(3, 1fr); gap:9px }
+.block-card { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 4px; border-radius:14px; border:2px solid #2B1E1A; background:#fff; transition:0.15s; gap:3px; text-align:center; cursor:pointer; box-shadow:2px 2px 0 #2B1E1A }
+.block-card:active { transform:scale(0.95); background:#F7B7D2 }
+.block-card-icon { font-size:22px }
+.block-card-label { font-size:10.5px; font-weight:700; color:#2B1E1A }
+
+/* STICKER PACKS TABS */
+.pack-tabs { display:flex; gap:6px; overflow-x:auto; margin-bottom:12px; padding-bottom:4px }
+.pack-tabs::-webkit-scrollbar { display:none }
+.pack-tab { padding:5px 12px; border-radius:20px; border:1.5px solid #E8C8B5; background:#fff; font-size:11px; font-weight:700; color:#4A3B32; white-space:nowrap; cursor:pointer }
+.pack-tab.active { background:#F7B7D2; color:#fff; border-color:#F7B7D2 }
+
+.sticker-quotes-list { display:flex; flex-direction:column; gap:8px; margin-bottom:14px }
+.quote-item { padding:8px 12px; border-radius:12px; border:1.5px solid #2B1E1A; font-family:'Caveat',cursive; font-size:16px; font-weight:700; color:#2B1E1A; cursor:pointer; display:flex; align-items:center; gap:8px; box-shadow:2px 2px 0 #2B1E1A }
+.quote-item:active { transform:scale(0.97); background:#F7B7D2 }
+
+.sticker-matrix { display:grid; grid-template-columns:repeat(6, 1fr); gap:6px }
+.btn-sticker { font-size:28px; text-align:center; padding:5px; border-radius:10px; cursor:pointer }
+.btn-sticker:active { transform:scale(1.25) }
+
+.tpl-list { display:flex; flex-direction:column; gap:8px }
+.tpl-card { border:2px solid #2B1E1A; border-radius:14px; background:#fff; padding:10px 12px; cursor:pointer; transition:0.15s; display:flex; align-items:center; gap:10px; box-shadow:2px 3px 0 #2B1E1A }
+.tpl-card:active { border-color:#D95389; background:#FFFBF7 }
+.tpl-card-icon { font-size:28px }
+.tpl-card-info { flex:1 }
+.tpl-card-title { font-family:'Caveat',cursive; font-size:20px; font-weight:700; color:#2B1E1A }
+.tpl-card-desc { font-size:11px; color:#6B5246 }
+
+#toast { position:fixed; bottom:70px; left:50%; transform:translateX(-50%) translateY(20px); background:#2B1E1A; color:#fff; padding:7px 16px; border-radius:20px; font-size:12px; font-weight:700; opacity:0; transition:0.25s; pointer-events:none; z-index:600 }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0) }
+
+#file-input { display:none }
+#json-input { display:none }
+</style>
+</head>
+<body>
+
+<input type="file" id="file-input" accept="image/*">
+<input type="file" id="json-input" accept=".json">
+
+<div id="app">
+  <div class="app-container">
+    
+    <!-- TOP TOOLBAR -->
+    <div class="toolbar-top">
+      <div class="tool-group">
+        <div class="tool-icon" id="btn-back" onclick="if(window.parent && window.parent !== window){ window.parent.postMessage('bujo-back', '*'); } else { window.location.href='/'; }" title="Back">←</div>
+        <div class="tool-icon" id="btn-undo" title="Undo">↩</div>
+        <div class="tool-icon" id="btn-redo" title="Redo">↪</div>
+        <div class="tool-icon" id="btn-paper-toggle" title="Paper Texture">📄</div>
+      </div>
+      <label for="page-title-input" style="display:none">Spread Title</label>
+      <input class="title-input" id="page-title-input" name="page_title" aria-label="Spread Title" value="My Pastel Bujo ✿">
+      <div class="tool-group">
+        <button class="tool-btn-save" id="btn-open-export" title="Save / Export">
+          <span>💾 Save</span>
+        </button>
+        <div class="tool-icon" id="btn-pen-toggle" title="Pen Mode">✏️</div>
+        <div class="tool-icon" id="btn-open-sidebar" title="All Tools">⋮</div>
+      </div>
+    </div>
+
+    <!-- SECONDARY FORMAT BAR -->
+    <div id="format-bar">
+      <label for="sel-font" style="display:none">Font Family</label>
+      <select class="f-select" id="sel-font" name="font_family" aria-label="Font Family">
+        <option value="'Caveat', cursive">Handwritten (Caveat)</option>
+        <option value="'Pacifico', cursive">Pacifico Script</option>
+        <option value="'Playfair Display', serif">Playfair Serif</option>
+        <option value="'DM Sans', sans-serif">DM Sans</option>
+        <option value="'Amiri', serif">Arabic (Amiri)</option>
+      </select>
+      <label for="sel-size" style="display:none">Font Size</label>
+      <select class="f-select" id="sel-size" name="font_size" aria-label="Font Size" style="width:62px">
+        <option value="16">16px</option>
+        <option value="20">20px</option>
+        <option value="24" selected>24px</option>
+        <option value="32">32px</option>
+      </select>
+      <button class="f-chip" id="btn-bold" aria-label="Toggle Bold"><b>B</b></button>
+      <button class="f-chip" id="btn-italic" aria-label="Toggle Italic"><i>I</i></button>
+      <div style="width:1px;height:18px;background:#E8C8B5;margin:0 2px;flex-shrink:0"></div>
+      <div class="color-swatch active" style="background:#F7B7D2" data-c="#F7B7D2" title="Pink"></div>
+      <div class="color-swatch" style="background:#A8E0D8" data-c="#A8E0D8" title="Mint"></div>
+      <div class="color-swatch" style="background:#FDE49C" data-c="#FDE49C" title="Yellow"></div>
+      <div class="color-swatch" style="background:#C8B6E2" data-c="#C8B6E2" title="Lavender"></div>
+      <div class="color-swatch" style="background:#C5DFC0" data-c="#C5DFC0" title="Sage"></div>
+      <div class="color-swatch" style="background:#2B1E1A" data-c="#2B1E1A" title="Ink Dark"></div>
+      <div class="color-swatch" style="background:#FFFFFF" data-c="#FFFFFF" title="White"></div>
+    </div>
+
+    <!-- CANVAS -->
+    <div id="wrap">
+      <div class="canvas" id="canvas">
+        <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="tap-marker"></div>
+      </div>
+    </div>
+
+    <!-- BOTTOM TOOLBAR DOCK -->
+    <div class="bottom-toolbar">
+      <div class="btool" data-dock="draw">
+        <div class="btool-icon">✏️</div>
+        <div class="btool-label">Draw</div>
+      </div>
+      <div class="btool active" data-dock="blocks">
+        <div class="btool-icon">📦</div>
+        <div class="btool-label">Elements</div>
+      </div>
+      <div class="btool" data-dock="stickers">
+        <div class="btool-icon">🌸</div>
+        <div class="btool-label">Doodles</div>
+      </div>
+      <div class="btool" data-dock="templates">
+        <div class="btool-icon">📋</div>
+        <div class="btool-label">Spreads</div>
+      </div>
+      <div class="btool" data-dock="export">
+        <div class="btool-icon">💾</div>
+        <div class="btool-label">Export</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BACKDROP & DRAWERS -->
+<div class="drawer-backdrop" id="backdrop"></div>
+
+<!-- 1. SAVE & EXPORT DRAWER -->
+<div class="drawer" id="drawer-export">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">
+    <span>Save & Export Spread 💾</span>
+  </div>
+  
+  <div class="export-grid">
+    <div class="export-card" id="btn-save-png">
+      <span class="export-card-icon">🖼️</span>
+      <span class="export-card-title">Save as PNG Image</span>
+      <span class="export-card-sub">High-resolution picture</span>
+    </div>
+    
+    <div class="export-card" id="btn-save-pdf">
+      <span class="export-card-icon">📄</span>
+      <span class="export-card-title">Save as PDF</span>
+      <span class="export-card-sub">Printable document</span>
+    </div>
+
+    <div class="export-card" id="btn-export-json">
+      <span class="export-card-icon">📦</span>
+      <span class="export-card-title">Backup Spread (JSON)</span>
+      <span class="export-card-sub">Save editable file</span>
+    </div>
+
+    <div class="export-card" id="btn-import-json">
+      <span class="export-card-icon">📥</span>
+      <span class="export-card-title">Restore Spread</span>
+      <span class="export-card-sub">Load backup JSON</span>
+    </div>
+
+    <div class="export-card" id="btn-share-spread">
+      <span class="export-card-icon">📤</span>
+      <span class="export-card-title">Share Spread</span>
+      <span class="export-card-sub">Send to friends</span>
+    </div>
+
+    <div class="export-card" id="btn-clear-canvas" style="border-color:#E05555;color:#E05555">
+      <span class="export-card-icon">🗑️</span>
+      <span class="export-card-title" style="color:#E05555">Clear Canvas</span>
+      <span class="export-card-sub">Start fresh page</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2. PAPER TEXTURE SELECTOR DRAWER -->
+<div class="drawer" id="drawer-paper">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">Choose Paper Background 📄</div>
+  <div class="grid-blocks">
+    <div class="block-card" data-paper="dotted">
+      <span class="block-card-icon">🔲</span>
+      <span class="block-card-label">Dotted Paper</span>
+    </div>
+    <div class="block-card" data-paper="grid">
+      <span class="block-card-icon">📐</span>
+      <span class="block-card-label">Graph Grid</span>
+    </div>
+    <div class="block-card" data-paper="lined">
+      <span class="block-card-icon">📝</span>
+      <span class="block-card-label">Lined Notebook</span>
+    </div>
+    <div class="block-card" data-paper="pink">
+      <span class="block-card-icon">🌸</span>
+      <span class="block-card-label">Pastel Pink</span>
+    </div>
+    <div class="block-card" data-paper="cream">
+      <span class="block-card-icon">📜</span>
+      <span class="block-card-label">Warm Vintage</span>
+    </div>
+    <div class="block-card" data-paper="night">
+      <span class="block-card-icon">🌙</span>
+      <span class="block-card-label">Night Chic</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3. ADD ELEMENTS DRAWER -->
+<div class="drawer" id="drawer-blocks">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">Add Bullet Journal Element 📦</div>
+  <div class="grid-blocks" id="grid-blocks-list"></div>
+</div>
+
+<!-- 4. DOODLES & STICKERS DRAWER -->
+<div class="drawer" id="drawer-stickers">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">Cute Doodles & Stickers 🌸</div>
+  <div class="pack-tabs" id="pack-tabs-container">
+    <div class="pack-tab active" data-pack="0">🌸 Scrapbook</div>
+    <div class="pack-tab" data-pack="1">🎀 Quotes</div>
+    <div class="pack-tab" data-pack="2">☕ Chibi</div>
+    <div class="pack-tab" data-pack="3">🌙 Hijabi</div>
+    <div class="pack-tab" data-pack="4">🌱 تحفيز لطيف</div>
+    <div class="pack-tab" data-pack="5">📚 دراسة وامتحانات</div>
+    <div class="pack-tab" data-pack="6">✨ خط عربي & Math</div>
+    <div class="pack-tab" data-pack="7">🎨 Emojis</div>
+  </div>
+  <div id="pack-content-area"></div>
+  <div class="sticker-matrix" id="sticker-matrix-list" style="margin-top:10px"></div>
+</div>
+
+<!-- 5. SPREADS & TEMPLATES DRAWER -->
+<div class="drawer" id="drawer-templates">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">Choose Ready Spread 📋</div>
+  <div class="tpl-list" id="template-list-items"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+const STICKER_DATA = ['🌸','🎀','💖','✨','🌙','🥑','☕','📖','🦋','🌷','💎','🍓','🕯️','🧸','🕊️','🌿','🧴','🎯','📑','🧁','🦄','👒','🏖️','🩰','🪞','💌','🍩','🎨','🌈','👑','🕌','📿','🕋','🤲','💡','📌'];
+
+const STICKER_PACKS = [
+  {
+    name: "🌸 Scrapbook Notes",
+    items: [
+      { text: "dream believe achieve repeat ✨", emoji: "📜", bg: "#FCE8EC" },
+      { text: "Collect beautiful moments 💖", emoji: "💌", bg: "#F7D6DE" },
+      { text: "little by little 🌸", emoji: "🏷️", bg: "#FCE8EC" },
+      { text: "one day at a time 🤍", emoji: "📄", bg: "#FDF2F4" },
+      { text: "take care of your mind and soul 🌿", emoji: "🎀", bg: "#FCE8EC" },
+      { text: "focus on the good ✨", emoji: "✨", bg: "#F7D6DE" },
+      { text: "Keep learning, keep growing 🦋", emoji: "🕊️", bg: "#FDF2F4" },
+    ]
+  },
+  {
+    name: "🎀 Romantic Quotes",
+    items: [
+      { text: "you are so so loved 💖", emoji: "🌹", bg: "#FCE8EC" },
+      { text: "romanticize your life a little more ✨", emoji: "🪞", bg: "#F7D6DE" },
+      { text: "soft heart, strong mind 🤍", emoji: "🌷", bg: "#FDF2F4" },
+      { text: "take the time to make your soul happy 🌸", emoji: "💌", bg: "#FCE8EC" },
+      { text: "it's okay to choose yourself 🎀", emoji: "🏷️", bg: "#F7D6DE" },
+      { text: "you are enough exactly as you are 🕊️", emoji: "📜", bg: "#FCE8EC" },
+    ]
+  },
+  {
+    name: "☕ Cute Chibi Girls",
+    items: [
+      { text: "Be your own kind of beautiful 🌸", emoji: "👧", bg: "#FCE8EC" },
+      { text: "Enjoy the little things ☕", emoji: "🧋", bg: "#F7D6DE" },
+      { text: "Happy Day! ☀️", emoji: "🧸", bg: "#FDF2F4" },
+      { text: "You can! 🌟", emoji: "📚", bg: "#FCE8EC" },
+      { text: "Good Vibes Only ✨", emoji: "👜", bg: "#F7D6DE" },
+    ]
+  },
+  {
+    name: "🌙 Cute Hijabi & Barakah",
+    items: [
+      { text: "سلام و رحمة 🕊️", emoji: "🧕", bg: "#FCE8EC" },
+      { text: "ورد اليوم والقرآن الكريم 📖", emoji: "🌙", bg: "#F7D6DE" },
+      { text: "فانوس البركة والذكر ✨", emoji: "🏮", bg: "#FDF2F4" },
+      { text: "قهوة الصباح ورضا الرحمن ☕", emoji: "🤍", bg: "#FCE8EC" },
+      { text: "اللهم بارك في يومي 🌸", emoji: "💐", bg: "#F7D6DE" },
+    ]
+  },
+  {
+    name: "🌱 تحفيز لطيف",
+    items: [
+      { text: "كل شيء سيكون بخير 💜", emoji: "☁️", bg: "#F3E8FF" },
+      { text: "انم بهدوء وبسلام 🌱", emoji: "🪴", bg: "#EAF5EA" },
+      { text: "استراحة ثم نكمل ☕", emoji: "☕", bg: "#FCE8EC" },
+      { text: "أنت تستحق كل الخير ⭐", emoji: "⭐", bg: "#FEF3C7" },
+      { text: "فخور(ة) بك جداً 💖", emoji: "🫙", bg: "#FCE8EC" },
+      { text: "تقدّم ولو بخطوة صغيرة 🌸", emoji: "🌷", bg: "#FDF2F4" },
+      { text: "أحلامك تستحق المحاولة 🏷️", emoji: "🎀", bg: "#FCE8EC" },
+      { text: "لا تقلق كل شيء بوقته ☁️", emoji: "☁️", bg: "#E0F2FE" },
+      { text: "صنع ذكريات جميلة 📷", emoji: "📷", bg: "#EAF5EA" },
+      { text: "اليوم لك فقط ☀️", emoji: "☀️", bg: "#FEF3C7" },
+      { text: "ثق بنفسك دائماً 💜", emoji: "✨", bg: "#F3E8FF" },
+      { text: "من يتعلم اليوم، يقود الغد 🌿", emoji: "🌿", bg: "#EAF5EA" },
+      { text: "رسالة لطيفة لك 💌", emoji: "💌", bg: "#FCE8EC" },
+      { text: "تعلم.. تطور.. تألق 📚", emoji: "📚", bg: "#E0F2FE" },
+      { text: "نم وأنت مطمئن 🌙", emoji: "🌙", bg: "#FEF3C7" },
+      { text: "لا تنس أن تكون لطيفاً مع نفسك 🎀", emoji: "🎀", bg: "#FCE8EC" },
+      { text: "خطوة صغيرة كل يوم تصنع فرق كبير 📝", emoji: "📝", bg: "#EAF5EA" },
+      { text: "التغيير جميل 🦋", emoji: "🦋", bg: "#F3E8FF" },
+      { text: "اليوم إنجاز جديد 📋", emoji: "📋", bg: "#FEF3C7" },
+      { text: "تفاءل دائماً بالخير 🌈", emoji: "🌈", bg: "#FCE8EC" },
+    ]
+  },
+  {
+    name: "📚 دراسة وامتحانات",
+    items: [
+      { text: "قومي الآن مستقبلك ينتظرك 💖", emoji: "✨", bg: "#FCE8EC" },
+      { text: "ابدأي الآن لا تنتظري المزاج المثالي ☀️", emoji: "☀️", bg: "#FEF3C7" },
+      { text: "وَفَوْقَ كُلِّ ذِي عِلْمٍ عَلِيمٌ 📖", emoji: "📖", bg: "#EAF5EA" },
+      { text: "تعبي اليوم هو راحتك غداً 🌿", emoji: "🪴", bg: "#EAF5EA" },
+      { text: "لا تضيعي وقتك أنتِ أقوى مما تتخيلين 🌸", emoji: "💪", bg: "#FCE8EC" },
+      { text: "قليل من التركيز يصنع فرقاً كبيراً ⭐", emoji: "⭐", bg: "#FEF3C7" },
+      { text: "أدرس الآن، فخوراً بك غداً 📚", emoji: "📚", bg: "#E0F2FE" },
+      { text: "قهوة الآن تركيز أعلى ☕", emoji: "☕", bg: "#FCE8EC" },
+      { text: "أطفئ العالم وانتصر لمستقبلك 💡", emoji: "💡", bg: "#FEF3C7" },
+      { text: "لا تتوقفي أنتِ على الطريق الصحيح ✨", emoji: "✨", bg: "#F3E8FF" },
+      { text: "تذكري: كل دقيقة تقربك من حلمك 📜", emoji: "📜", bg: "#FEF3C7" },
+      { text: "أنتِ تبنين حلمك بكل حرف تدرسينه 💐", emoji: "💐", bg: "#FCE8EC" },
+      { text: "الآن هو أفضل وقت لتبدأي ⏰", emoji: "⏰", bg: "#EAF5EA" },
+      { text: "لا تجعلي خوفك أكبر من حلمك 💜", emoji: "💜", bg: "#F3E8FF" },
+      { text: "وَقُل رَّبِّ زِدْنِي عِلْماً 📖", emoji: "📖", bg: "#EAF5EA" },
+      { text: "وَمَا تَوْفِيقِي إِلَّا بِاللَّهِ 🤲", emoji: "🤲", bg: "#FEF3C7" },
+      { text: "إِنَّ مَعَ الْعُسْرِ يُسْراً ✨", emoji: "✨", bg: "#FCE8EC" },
+      { text: "قائمة اليوم: صلاة ✓ قرآن ✓ دراسة ✓ دعاء ✓ 📋", emoji: "📋", bg: "#FEF3C7" },
+      { text: "أنا أستطيع، أنا أتعلم، أنا أحقق حلمي 💖", emoji: "💖", bg: "#FCE8EC" },
+      { text: "كل مجهود لن يضيع ثقي بالله واصبري 🤍", emoji: "🤍", bg: "#FDF2F4" },
+      { text: "اللهم لا سهل إلا ما جعلته سهلاً 🤲", emoji: "🤲", bg: "#EAF5EA" },
+      { text: "إلى طالبة اليوم وقائدة الغد... أنتِ فخورة بك 🌸", emoji: "🌸", bg: "#FCE8EC" },
+      { text: "ابدأي الآن حتى لو لم تكن جاهزة 💜", emoji: "💜", bg: "#F3E8FF" },
+    ]
+  },
+  {
+    name: "✨ خط عربي & Math",
+    items: [
+      { text: "لا أبرح حتى أبلغ ✨", emoji: "💫", bg: "#FEF3C7" },
+      { text: "فصبر جميل 🌹", emoji: "🌹", bg: "#FCE8EC" },
+      { text: "سأصير يوماً ما أريد 🌸", emoji: "🌸", bg: "#FDF2F4" },
+      { text: "وَأَن لَّيْسَ لِلْإِنسَانِ إِلَّا مَا سَعَىٰ 📜", emoji: "📜", bg: "#EAF5EA" },
+      { text: "أنت تحاول والله يراك وهذا يكفي 🤍", emoji: "🤍", bg: "#FDF2F4" },
+      { text: "وَبَشِّرِ الصَّابِرِينَ 🌸", emoji: "🌸", bg: "#FCE8EC" },
+      { text: "وَمَا تَوْفِيقِي إِلَّا بِاللَّهِ ✨", emoji: "✨", bg: "#FEF3C7" },
+      { text: "رَبِّ زِدْنِي عِلْمًا 📖", emoji: "📖", bg: "#EAF5EA" },
+      { text: "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا 💫", emoji: "💫", bg: "#FCE8EC" },
+      { text: "الحمدلله على النعم التي تحيط بنا 🌸", emoji: "🌸", bg: "#FDF2F4" },
+      { text: "يأتيك بها الله وإن كانت مستحيلة 💖", emoji: "💖", bg: "#FCE8EC" },
+      { text: "توكل على الله 🌸", emoji: "✨", bg: "#FCE8EC" },
+      { text: "صبر جميل 🌸", emoji: "🌷", bg: "#FDF2F4" },
+      { text: "الحمدلله دائماً وأبداً 🌟", emoji: "🌟", bg: "#FEF3C7" },
+      { text: "يا حي يا قيوم برحمتك أستغيث 🤲", emoji: "🤲", bg: "#EAF5EA" },
+      { text: "لنا في الله ظن لا يخيب 🕊️", emoji: "🕊️", bg: "#E0F2FE" },
+      { text: "سبحان الله • الحمد لله • الله أكبر 📿", emoji: "📿", bg: "#FEF3C7" },
+      { text: "GIRL MATH 🧮 🎀", emoji: "🎀", bg: "#FCE8EC" },
+      { text: "Book Girly 📚 🎀", emoji: "📚", bg: "#FCE8EC" },
+      { text: "2026 Goals ✨", emoji: "🎯", bg: "#FEF3C7" },
+    ]
+  }
+];
+
+const STATE = {
+  blocks: [],
+  strokes: [],
+  selectedId: null,
+  activeMode: 'select',
+  drawColor: '#2B1E1A',
+  drawSize: 3,
+  undoStack: [],
+  redoStack: [],
+  isDrawing: false,
+  dPoints: [],
+  dPathEl: null,
+  targetPos: { x: 20, y: 60 }
+};
+
+function uid() { return 'b_' + Math.random().toString(36).substr(2, 9); }
+
+function init() {
+  loadData();
+  renderBlocks();
+  renderStrokes();
+  setupUI();
+  setupCanvasEvents();
+}
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem('proplanner_bujo_v19');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      STATE.blocks = parsed.blocks || [];
+      STATE.strokes = parsed.strokes || [];
+    }
+  } catch(e) {}
+  if (!STATE.blocks.length) {
+    loadExactPastelSpread('My Pastel Bujo ✿');
+  }
+}
+
+function saveData() {
+  try {
+    localStorage.setItem('proplanner_bujo_v19', JSON.stringify({
+      blocks: STATE.blocks,
+      strokes: STATE.strokes
+    }));
+  } catch(e) {}
+}
+
+function pushHistory() {
+  STATE.undoStack.push(JSON.stringify({ blocks: STATE.blocks, strokes: STATE.strokes }));
+  if (STATE.undoStack.length > 25) STATE.undoStack.shift();
+  STATE.redoStack = [];
+}
+
+function undo() {
+  if (!STATE.undoStack.length) return;
+  STATE.redoStack.push(JSON.stringify({ blocks: STATE.blocks, strokes: STATE.strokes }));
+  const prev = JSON.parse(STATE.undoStack.pop());
+  STATE.blocks = prev.blocks; STATE.strokes = prev.strokes;
+  STATE.selectedId = null;
+  renderBlocks(); renderStrokes(); saveData(); toast('Undone ↩');
+}
+
+function redo() {
+  if (!STATE.redoStack.length) return;
+  STATE.undoStack.push(JSON.stringify({ blocks: STATE.blocks, strokes: STATE.strokes }));
+  const next = JSON.parse(STATE.redoStack.pop());
+  STATE.blocks = next.blocks; STATE.strokes = next.strokes;
+  STATE.selectedId = null;
+  renderBlocks(); renderStrokes(); saveData(); toast('Redone ↪');
+}
+
+/* --- THE EXACT PASTEL BULLET JOURNAL SPREAD FROM SCREENSHOT --- */
+function loadExactPastelSpread(title) {
+  if (title) document.getElementById('page-title-input').value = title;
+  STATE.blocks = [
+    { id: uid(), type: 'ribbon', x: 8, y: 12, w: 185, h: 42, rot: 0, text: '♡ Bullet Journal ♡', bg: '#FDE49C' },
+    { id: uid(), type: 'banner-day', x: 202, y: 12, w: 160, h: 38, rot: 0, text: '♡ - Sunday - ♡', bg: '#A8E0D8' },
+    { id: uid(), type: 'washi-todo', x: 8, y: 64, w: 185, h: 175, rot: 0, title: 'To Do List', items: [
+      { text: 'Morning Tea & Gratitude', done: true },
+      { text: 'Read 20 pages of book', done: true },
+      { text: 'Sketch weekly layout', done: false },
+      { text: 'Water house plants', done: false }
+    ] },
+    { id: uid(), type: 'spiral-note', x: 202, y: 58, w: 160, h: 155, rot: 0, text: 'Notes & Ideas ✏️\nRemember to stay consistent & kind to yourself! 🌸' },
+    { id: uid(), type: 'card-stacked', x: 202, y: 224, w: 160, h: 80, rot: 0, text: '📌 Important Reminder:\nExams start in 2 weeks!' },
+    { id: uid(), type: 'badge-num', x: 10, y: 250, w: 42, h: 50, rot: 0, num: '1' },
+    { id: uid(), type: 'badge-num', x: 60, y: 250, w: 42, h: 50, rot: 0, num: '2' },
+    { id: uid(), type: 'badge-num', x: 110, y: 250, w: 42, h: 50, rot: 0, num: '3' },
+    { id: uid(), type: 'divider-vine', x: 8, y: 310, w: 185, h: 28, rot: 0, text: '🌿 🌿 🌿 🌿 🌿' },
+    { id: uid(), type: 'islamic-salah', x: 8, y: 348, w: 185, h: 185, rot: 0, prayerState: { Fajr: true, Dhuhr: true, Asr: false, Maghrib: false, Isha: false } }
+  ];
+}
+
+function loadStudySpread(title) {
+  if (title) document.getElementById('page-title-input').value = title;
+  STATE.blocks = [
+    { id: uid(), type: 'ribbon', x: 10, y: 12, w: 220, h: 42, rot: 0, text: '📚 Study & Exam Sprint', bg: '#A8E0D8' },
+    { id: uid(), type: 'banner-day', x: 240, y: 12, w: 125, h: 38, rot: 0, text: '♡ Study Block ♡', bg: '#FDE49C' },
+    { id: uid(), type: 'spiral-note', x: 10, y: 64, w: 180, h: 160, rot: 0, text: 'Exam Topics 📖:\n1. Core Algorithms\n2. Data Structures\n3. Graph Traversals\n4. Practice Sets' },
+    { id: uid(), type: 'washi-todo', x: 200, y: 64, w: 165, h: 160, rot: 0, title: 'Checkpoints', items: [
+      { text: 'Flashcard 45m', done: true },
+      { text: 'Pomodoro Set 1', done: true },
+      { text: 'Formula Review', done: false }
+    ] },
+    { id: uid(), type: 'card-stacked', x: 10, y: 236, w: 355, h: 75, rot: 0, text: '💡 Study Wisdom:\n"Focus on progress, not perfection. Keep going! ✨"' }
+  ];
+}
+
+function renderBlocks() {
+  const container = document.getElementById('canvas');
+  container.querySelectorAll('.block').forEach(el => el.remove());
+
+  STATE.blocks.forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'block' + (STATE.selectedId === b.id ? ' selected' : '');
+    el.id = b.id;
+    el.style.left = b.x + 'px';
+    el.style.top = b.y + 'px';
+    el.style.width = (b.w || 140) + 'px';
+    if (b.h) el.style.height = b.h + 'px';
+    el.style.transform = 'rotate(' + (b.rot || 0) + 'deg)';
+
+    const tb = document.createElement('div');
+    tb.className = 'block-toolbar';
+    tb.innerHTML = `
+      <div class="tb-btn tb-drag">✋ Move</div>
+      <div class="tb-btn" data-act="edit">✏️ Edit</div>
+      <div class="tb-btn" data-act="dup">📋 Dup</div>
+      <div class="tb-btn tb-del" data-act="del">🗑️</div>
+    `;
+    el.appendChild(tb);
+
+    const handleRot = document.createElement('div');
+    handleRot.className = 'handle-rotate';
+    handleRot.innerHTML = '⟳';
+    el.appendChild(handleRot);
+
+    const handleRes = document.createElement('div');
+    handleRes.className = 'handle-resize';
+    handleRes.innerHTML = '↗';
+    el.appendChild(handleRes);
+
+    const inner = document.createElement('div');
+    inner.className = 'block-inner';
+    renderBlockContent(inner, b);
+    el.appendChild(inner);
+
+    function handleStart(e) {
+      if (STATE.activeMode === 'pen' || STATE.activeMode === 'marker') return;
+      const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable || e.target.closest('.washi-circle') || e.target.closest('.salah-check');
+      selectBlock(b.id);
+      if (e.target.closest('.tb-drag') || (!isInput && (e.target === inner || e.target.closest('.block-inner')))) {
+        e.stopPropagation();
+        startDragBlock(e, b, el);
+      }
+    }
+
+    el.addEventListener('pointerdown', handleStart);
+    el.addEventListener('touchstart', handleStart, { passive: true });
+
+    tb.querySelectorAll('[data-act]').forEach(btn => {
+      function handleAct(e) {
+        e.stopPropagation();
+        const act = btn.dataset.act;
+        if (act === 'del') {
+          pushHistory();
+          STATE.blocks = STATE.blocks.filter(x => x.id !== b.id);
+          STATE.selectedId = null;
+          renderBlocks(); saveData(); toast('Deleted 🗑️');
+        } else if (act === 'dup') {
+          pushHistory();
+          const copy = JSON.parse(JSON.stringify(b));
+          copy.id = uid(); copy.x += 15; copy.y += 15;
+          STATE.blocks.push(copy);
+          selectBlock(copy.id);
+          renderBlocks(); saveData(); toast('Duplicated 📋');
+        } else if (act === 'edit') {
+          editBlockModal(b);
+        }
+      }
+      btn.addEventListener('click', handleAct);
+      btn.addEventListener('touchend', handleAct);
+    });
+
+    setupResize(handleRes, b, el);
+    setupRotate(handleRot, b, el);
+
+    container.appendChild(el);
+  });
+}
+
+function selectBlock(id) {
+  STATE.selectedId = id;
+  document.querySelectorAll('.block').forEach(el => {
+    el.classList.toggle('selected', el.id === id);
+  });
+}
+
+function editBlockModal(b) {
+  if (b.type === 'banner-day') {
+    const val = prompt('Edit Weekday Banner Text:', b.text || '♡ - Sunday - ♡');
+    if (val !== null) { b.text = val; renderBlocks(); saveData(); }
+  } else if (b.type === 'ribbon') {
+    const val = prompt('Edit Ribbon Title:', b.text || '♡ Bullet Journal ♡');
+    if (val !== null) { b.text = val; renderBlocks(); saveData(); }
+  } else if (b.type === 'spiral-note') {
+    const val = prompt('Edit Notepad Text:', b.text || '');
+    if (val !== null) { b.text = val; renderBlocks(); saveData(); }
+  } else if (b.type === 'washi-todo') {
+    const currentStr = (b.items || []).map(i => i.text).join('\n');
+    const val = prompt('Edit To-Do Tasks (one per line):', currentStr);
+    if (val !== null) {
+      b.items = val.split('\n').filter(s => s.trim()).map(s => ({ text: s.trim(), done: false }));
+      renderBlocks(); saveData();
+    }
+  } else if (b.type === 'card-stacked') {
+    const val = prompt('Edit Stacked Note Text:', b.text || '');
+    if (val !== null) { b.text = val; renderBlocks(); saveData(); }
+  } else if (b.type === 'badge-num') {
+    const val = prompt('Edit Badge Number or Text:', b.num || '1');
+    if (val !== null) { b.num = val; renderBlocks(); saveData(); }
+  } else if (b.type === 'divider-vine') {
+    const val = prompt('Edit Leaf Vine Pattern:', b.text || '🌿 🌿 🌿 🌿 🌿');
+    if (val !== null) { b.text = val; renderBlocks(); saveData(); }
+  } else if (b.type === 'text') {
+    const val = prompt('Edit Text Content:', b.text || '');
+    if (val !== null) { b.text = val; renderBlocks(); saveData(); }
+  }
+}
+
+function renderBlockContent(container, b) {
+  if (b.type === 'banner-day') {
+    const inlineBg = b.bg ? `style="background:${b.bg}"` : '';
+    container.innerHTML = `<div class="b-banner-day" ${inlineBg} contenteditable="true">${b.text || '♡ - Sunday - ♡'}</div>`;
+    const box = container.querySelector('.b-banner-day');
+    box.addEventListener('blur', () => { b.text = box.innerText; saveData(); });
+  } else if (b.type === 'ribbon') {
+    container.innerHTML = `<div class="b-ribbon" style="background:${b.bg||'#FDE49C'}" contenteditable="true">${b.text || '♡ Bullet Journal ♡'}</div>`;
+    const r = container.querySelector('.b-ribbon');
+    r.addEventListener('blur', () => { b.text = r.innerText; saveData(); });
+  } else if (b.type === 'spiral-note') {
+    const inlineBg = b.bg ? `style="background:${b.bg}"` : '';
+    container.innerHTML = `<div class="b-spiral-note" ${inlineBg}><div class="spiral-rings"><div class="spiral-ring"></div><div class="spiral-ring"></div><div class="spiral-ring"></div><div class="spiral-ring"></div></div><textarea class="spiral-ta" rows="4">${b.text||'Notes & Ideas ✏️...'}</textarea></div>`;
+    const ta = container.querySelector('.spiral-ta');
+    ta.addEventListener('input', () => { b.text = ta.value; saveData(); });
+  } else if (b.type === 'washi-todo') {
+    const items = b.items || [];
+    const inlineBg = b.bg ? `style="background:${b.bg}"` : '';
+    let html = `<div class="b-washi-todo" ${inlineBg}><div class="washi-tape-top"></div><div class="washi-hdr" contenteditable="true">${b.title||'To Do List'}</div>`;
+    items.forEach((t, iIdx) => {
+      const cls = t.done ? 'done' : '';
+      const symbol = t.done ? '✓' : '';
+      const textStyle = t.done ? 'text-decoration:line-through;opacity:.6' : '';
+      html += `<div class="washi-item"><div class="washi-circle ${cls}" data-w="${iIdx}">${symbol}</div><span contenteditable="true" data-ti="${iIdx}" style="font-family:'Caveat',cursive;font-size:15px;color:#2B1E1A;${textStyle}">${t.text}</span></div>`;
+    });
+    html += `</div>`;
+    container.innerHTML = html;
+    container.querySelectorAll('.washi-circle').forEach(wc => {
+      wc.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const iIdx = parseInt(wc.dataset.w);
+        items[iIdx].done = !items[iIdx].done;
+        b.items = items;
+        renderBlocks(); saveData();
+      });
+    });
+    container.querySelectorAll('[data-ti]').forEach(sp => {
+      sp.addEventListener('blur', () => {
+        const iIdx = parseInt(sp.dataset.ti);
+        items[iIdx].text = sp.innerText;
+        b.items = items; saveData();
+      });
+    });
+  } else if (b.type === 'card-stacked') {
+    const inlineBg = b.bg ? `style="background:${b.bg}"` : '';
+    container.innerHTML = `<div class="b-card-stacked" ${inlineBg}><textarea class="spiral-ta" style="font-size:15px;line-height:1.3">${b.text||'Stacked Note...'}</textarea></div>`;
+    const ta = container.querySelector('textarea');
+    ta.addEventListener('input', () => { b.text = ta.value; saveData(); });
+  } else if (b.type === 'badge-num') {
+    const inlineBg = b.bg ? `style="background:${b.bg}"` : '';
+    container.innerHTML = `<div class="b-badge-num"><div class="badge-circle" ${inlineBg} contenteditable="true">${b.num||'1'}</div><div class="badge-tails"><div class="badge-tail"></div><div class="badge-tail"></div></div></div>`;
+    const bc = container.querySelector('.badge-circle');
+    bc.addEventListener('blur', () => { b.num = bc.innerText; saveData(); });
+  } else if (b.type === 'divider-vine') {
+    container.innerHTML = `<div class="b-divider-vine" contenteditable="true">${b.text||'🌿 🌿 🌿 🌿 🌿'}</div>`;
+    const dv = container.querySelector('.b-divider-vine');
+    dv.addEventListener('blur', () => { b.text = dv.innerText; saveData(); });
+  } else if (b.type === 'islamic-salah') {
+    const st = b.prayerState || { Fajr: true, Dhuhr: true, Asr: false, Maghrib: false, Isha: false };
+    let html = `<div class="b-islamic-salah"><div class="salah-hdr">أوقات الصلاة - Daily Salah</div>`;
+    ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].forEach(pName => {
+      html += `<div class="salah-row"><span class="salah-name">${pName}</span><div class="salah-check ${st[pName]?'done':''}" data-prayer="${pName}">${st[pName]?'✓':''}</div></div>`;
+    });
+    html += `</div>`;
+    container.innerHTML = html;
+    container.querySelectorAll('.salah-check').forEach(chk => {
+      chk.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const p = chk.dataset.prayer;
+        st[p] = !st[p];
+        b.prayerState = st;
+        renderBlocks(); saveData();
+      });
+    });
+  } else if (b.type === 'text') {
+    container.innerHTML = `<div class="b-text" style="font-family:${b.font||"'Caveat',cursive"}; font-size:${b.size||22}px" contenteditable="true">${b.text || 'Tap to edit...'}</div>`;
+    const txtEl = container.querySelector('.b-text');
+    txtEl.addEventListener('blur', () => { b.text = txtEl.innerText; saveData(); });
+  } else if (b.type === 'sticker') {
+    container.innerHTML = `<div class="b-sticker" contenteditable="true">${b.emoji || '🌸'}</div>`;
+    const st = container.querySelector('.b-sticker');
+    st.addEventListener('blur', () => { b.emoji = st.innerText; saveData(); });
+  } else if (b.type === 'image') {
+    container.innerHTML = `<div class="b-img"><img src="${b.url}" alt="Imported image"></div>`;
+  }
+}
+
+function startDragBlock(e, b, el) {
+  const startX = e.clientX || (e.touches && e.touches[0].clientX);
+  const startY = e.clientY || (e.touches && e.touches[0].clientY);
+  const initX = b.x; const initY = b.y;
+
+  function onMove(ev) {
+    const cx = ev.clientX || (ev.touches && ev.touches[0].clientX);
+    const cy = ev.clientY || (ev.touches && ev.touches[0].clientY);
+    if (cx === undefined || cy === undefined) return;
+    b.x = Math.max(0, initX + (cx - startX));
+    b.y = Math.max(0, initY + (cy - startY));
+    el.style.left = b.x + 'px';
+    el.style.top = b.y + 'px';
+  }
+  function onUp() {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('touchmove', onMove);
+    window.removeEventListener('touchend', onUp);
+    saveData();
+  }
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('touchmove', onMove, { passive: true });
+  window.addEventListener('touchend', onUp);
+}
+
+function setupResize(handle, b, el) {
+  function startResize(e) {
+    e.stopPropagation();
+    const startX = e.clientX || (e.touches && e.touches[0].clientX);
+    const startY = e.clientY || (e.touches && e.touches[0].clientY);
+    const initW = b.w || 140;
+    const initH = b.h || 140;
+
+    function onMove(ev) {
+      const cx = ev.clientX || (ev.touches && ev.touches[0].clientX);
+      const cy = ev.clientY || (ev.touches && ev.touches[0].clientY);
+      if (cx === undefined) return;
+      b.w = Math.max(50, initW + (cx - startX));
+      el.style.width = b.w + 'px';
+      if (b.type === 'image') {
+        b.h = Math.max(50, initH + (cy - startY));
+        el.style.height = b.h + 'px';
+      }
+    }
+    function onUp() {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+      saveData();
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('touchend', onUp);
+  }
+  handle.addEventListener('pointerdown', startResize);
+  handle.addEventListener('touchstart', startResize, { passive: true });
+}
+
+function setupRotate(handle, b, el) {
+  function startRotate(e) {
+    e.stopPropagation();
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    function onMove(ev) {
+      const px = ev.clientX || (ev.touches && ev.touches[0].clientX);
+      const py = ev.clientY || (ev.touches && ev.touches[0].clientY);
+      if (px === undefined || py === undefined) return;
+      const rad = Math.atan2(py - cy, px - cx);
+      b.rot = Math.round(rad * (180 / Math.PI) - 90);
+      el.style.transform = 'rotate(' + b.rot + 'deg)';
+    }
+    function onUp() {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+      saveData();
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('touchend', onUp);
+  }
+  handle.addEventListener('pointerdown', startRotate);
+  handle.addEventListener('touchstart', startRotate, { passive: true });
+}
+
+function setupCanvasEvents() {
+  const wrap = document.getElementById('wrap');
+  const canvas = document.getElementById('canvas');
+  const svg = document.getElementById('svg-layer');
+  const marker = document.getElementById('tap-marker');
+
+  canvas.addEventListener('click', (e) => {
+    if (STATE.activeMode === 'pen') return;
+    if (e.target.closest('.block')) return;
+    const r = canvas.getBoundingClientRect();
+    STATE.targetPos = { x: Math.max(8, Math.round(e.clientX - r.left - 40)), y: Math.max(8, Math.round(e.clientY - r.top - 20)) };
+    marker.style.left = (e.clientX - r.left) + 'px';
+    marker.style.top = (e.clientY - r.top) + 'px';
+    marker.style.display = 'block';
+    STATE.selectedId = null;
+    document.querySelectorAll('.block').forEach(el => el.classList.remove('selected'));
+  });
+
+  wrap.addEventListener('pointerdown', (e) => {
+    if (STATE.activeMode !== 'pen') return;
+    STATE.isDrawing = true;
+    const r = svg.getBoundingClientRect();
+    const pt = { x: e.clientX - r.left, y: e.clientY - r.top + wrap.scrollTop };
+    STATE.dPoints = [pt];
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke', STATE.drawColor);
+    path.setAttribute('stroke-width', STATE.drawSize);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(path);
+    STATE.dPathEl = path;
+  });
+
+  wrap.addEventListener('pointermove', (e) => {
+    if (!STATE.isDrawing) return;
+    const r = svg.getBoundingClientRect();
+    const pt = { x: e.clientX - r.left, y: e.clientY - r.top + wrap.scrollTop };
+    STATE.dPoints.push(pt);
+    if (STATE.dPathEl) {
+      STATE.dPathEl.setAttribute('d', pointsToPath(STATE.dPoints));
+    }
+  });
+
+  const stopDraw = () => {
+    if (STATE.isDrawing) {
+      STATE.isDrawing = false;
+      if (STATE.dPoints.length > 1) {
+        pushHistory();
+        STATE.strokes.push({
+          d: pointsToPath(STATE.dPoints),
+          color: STATE.drawColor,
+          size: STATE.drawSize
+        });
+        saveData();
+      }
+      STATE.dPathEl = null; STATE.dPoints = [];
+    }
+  };
+
+  wrap.addEventListener('pointerup', stopDraw);
+  wrap.addEventListener('pointercancel', stopDraw);
+}
+
+function renderStrokes() {
+  const svg = document.getElementById('svg-layer');
+  svg.innerHTML = '';
+  STATE.strokes.forEach(s => {
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', s.d);
+    p.setAttribute('stroke', s.color);
+    p.setAttribute('stroke-width', s.size);
+    p.setAttribute('fill', 'none');
+    p.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(p);
+  });
+}
+
+function pointsToPath(pts) {
+  if (pts.length < 2) return '';
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    d += ` L ${pts[i].x} ${pts[i].y}`;
+  }
+  return d;
+}
+
+function triggerImageImport() {
+  document.getElementById('file-input').click();
+}
+
+/* --- SAVE & EXPORT FUNCTIONS --- */
+async function saveCanvasAsPNG() {
+  closeDrawers();
+  toast('Rendering PNG image... ⏳');
+  try {
+    const canvasEl = document.getElementById('canvas');
+    const title = document.getElementById('page-title-input').value.trim() || 'My_Pastel_Bujo';
+    const filename = `${title.replace(/\s+/g, '_')}_${Date.now()}.png`;
+
+    // Deselect any active blocks before snapshot
+    STATE.selectedId = null;
+    document.querySelectorAll('.block').forEach(el => el.classList.remove('selected'));
+
+    const canvasSnap = await html2canvas(canvasEl, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: null,
+      logging: false
+    });
+
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvasSnap.toDataURL('image/png');
+    link.click();
+    toast('PNG saved to downloads! 🖼️');
+  } catch(e) {
+    console.error(e);
+    toast('Export failed, please try again.');
+  }
+}
+
+async function saveCanvasAsPDF() {
+  closeDrawers();
+  toast('Generating PDF document... ⏳');
+  try {
+    const canvasEl = document.getElementById('canvas');
+    const title = document.getElementById('page-title-input').value.trim() || 'My_Pastel_Bujo';
+    const filename = `${title.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+
+    STATE.selectedId = null;
+    document.querySelectorAll('.block').forEach(el => el.classList.remove('selected'));
+
+    const canvasSnap = await html2canvas(canvasEl, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#FAF6F0',
+      logging: false
+    });
+
+    const imgData = canvasSnap.toDataURL('image/jpeg', 0.95);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'px',
+      format: [canvasSnap.width / 2, canvasSnap.height / 2]
+    });
+
+    pdf.addImage(imgData, 'JPEG', 0, 0, canvasSnap.width / 2, canvasSnap.height / 2);
+    pdf.save(filename);
+    toast('PDF downloaded successfully! 📄');
+  } catch(e) {
+    console.error(e);
+    toast('PDF export failed, please try again.');
+  }
+}
+
+function exportJSONBackup() {
+  closeDrawers();
+  const data = {
+    title: document.getElementById('page-title-input').value,
+    blocks: STATE.blocks,
+    strokes: STATE.strokes,
+    version: '1.0',
+    date: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Bujo_Spread_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Spread backup exported! 📦');
+}
+
+function shareSpread() {
+  closeDrawers();
+  if (navigator.share) {
+    navigator.share({
+      title: document.getElementById('page-title-input').value,
+      text: 'Check out my digital pastel bullet journal spread! 🌸✨',
+      url: window.location.href
+    }).catch(() => {});
+  } else {
+    toast('Share not supported on this browser. Use Save as PNG!');
+  }
+}
+
+function clearSpreadCanvas() {
+  closeDrawers();
+  if (confirm('Are you sure you want to clear the entire page?')) {
+    pushHistory();
+    STATE.blocks = [];
+    STATE.strokes = [];
+    STATE.selectedId = null;
+    renderBlocks();
+    renderStrokes();
+    saveData();
+    toast('Canvas cleared! ✨');
+  }
+}
+
+function setupUI() {
+  const exportBtn = document.getElementById('btn-open-export');
+  if (exportBtn) exportBtn.addEventListener('click', () => openDrawer('drawer-export'));
+
+  const fileInput = document.getElementById('file-input');
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          pushHistory();
+          const b = { id: uid(), type: 'image', url: evt.target.result, x: STATE.targetPos.x, y: STATE.targetPos.y, w: 180, h: 140, rot: 0 };
+          STATE.blocks.push(b);
+          selectBlock(b.id);
+          renderBlocks(); saveData(); toast('Image imported! 🖼️');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  const jsonInput = document.getElementById('json-input');
+  if (jsonInput) {
+    jsonInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            const parsed = JSON.parse(evt.target.result);
+            if (parsed.blocks) {
+              pushHistory();
+              STATE.blocks = parsed.blocks;
+              STATE.strokes = parsed.strokes || [];
+              if (parsed.title) document.getElementById('page-title-input').value = parsed.title;
+              renderBlocks(); renderStrokes(); saveData(); toast('Spread restored! 📥');
+            }
+          } catch(err) {
+            toast('Invalid spread file.');
+          }
+        };
+        reader.readAsText(file);
+      }
+    });
+  }
+
+  const savePngBtn = document.getElementById('btn-save-png');
+  if (savePngBtn) savePngBtn.addEventListener('click', saveCanvasAsPNG);
+
+  const savePdfBtn = document.getElementById('btn-save-pdf');
+  if (savePdfBtn) savePdfBtn.addEventListener('click', saveCanvasAsPDF);
+
+  const expJsonBtn = document.getElementById('btn-export-json');
+  if (expJsonBtn) expJsonBtn.addEventListener('click', exportJSONBackup);
+
+  const impJsonBtn = document.getElementById('btn-import-json');
+  if (impJsonBtn) impJsonBtn.addEventListener('click', () => jsonInput && jsonInput.click());
+
+  const shareBtn = document.getElementById('btn-share-spread');
+  if (shareBtn) shareBtn.addEventListener('click', shareSpread);
+
+  const clearBtn = document.getElementById('btn-clear-canvas');
+  if (clearBtn) clearBtn.addEventListener('click', clearSpreadCanvas);
+
+  const penToggle = document.getElementById('btn-pen-toggle');
+  if (penToggle) {
+    penToggle.addEventListener('click', () => {
+      STATE.activeMode = STATE.activeMode === 'pen' ? 'select' : 'pen';
+      document.getElementById('wrap').classList.toggle('mode-draw', STATE.activeMode === 'pen');
+      penToggle.classList.toggle('active', STATE.activeMode === 'pen');
+      toast(STATE.activeMode === 'pen' ? 'Pen Mode Active 🖊' : 'Select Mode Active ✋');
+    });
+  }
+
+  const paperToggle = document.getElementById('btn-paper-toggle');
+  if (paperToggle) {
+    paperToggle.addEventListener('click', () => openDrawer('drawer-paper'));
+  }
+
+  document.querySelectorAll('[data-paper]').forEach(pBtn => {
+    pBtn.addEventListener('click', () => {
+      const mode = pBtn.dataset.paper;
+      const c = document.getElementById('canvas');
+      c.className = 'canvas';
+      if (mode !== 'dotted') c.classList.add('paper-' + mode);
+      closeDrawers();
+      toast('Paper texture changed! 📄');
+    });
+  });
+
+  const sidebarBtn = document.getElementById('btn-open-sidebar');
+  if (sidebarBtn) sidebarBtn.addEventListener('click', () => openDrawer('drawer-blocks'));
+
+  const fontSelect = document.getElementById('sel-font');
+  if (fontSelect) {
+    fontSelect.addEventListener('change', () => {
+      const b = STATE.blocks.find(x => x.id === STATE.selectedId);
+      if (b) {
+        b.font = fontSelect.value;
+        renderBlocks(); saveData(); toast('Font updated! 🔤');
+      }
+    });
+  }
+
+  const sizeSelect = document.getElementById('sel-size');
+  if (sizeSelect) {
+    sizeSelect.addEventListener('change', () => {
+      const b = STATE.blocks.find(x => x.id === STATE.selectedId);
+      if (b) {
+        b.size = parseInt(sizeSelect.value);
+        renderBlocks(); saveData(); toast('Size updated! 🔤');
+      }
+    });
+  }
+
+  const boldBtn = document.getElementById('btn-bold');
+  if (boldBtn) {
+    boldBtn.addEventListener('click', () => {
+      boldBtn.classList.toggle('active');
+      const b = STATE.blocks.find(x => x.id === STATE.selectedId);
+      if (b) {
+        b.bold = boldBtn.classList.contains('active');
+        renderBlocks(); saveData();
+      }
+    });
+  }
+
+  const italicBtn = document.getElementById('btn-italic');
+  if (italicBtn) {
+    italicBtn.addEventListener('click', () => {
+      italicBtn.classList.toggle('active');
+      const b = STATE.blocks.find(x => x.id === STATE.selectedId);
+      if (b) {
+        b.italic = italicBtn.classList.contains('active');
+        renderBlocks(); saveData();
+      }
+    });
+  }
+
+  document.querySelectorAll('.btool').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btool').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const dock = btn.dataset.dock;
+      closeDrawers();
+      if (dock === 'blocks') openDrawer('drawer-blocks');
+      else if (dock === 'stickers') openDrawer('drawer-stickers');
+      else if (dock === 'templates') openDrawer('drawer-templates');
+      else if (dock === 'export') openDrawer('drawer-export');
+      else if (dock === 'draw') {
+        STATE.activeMode = STATE.activeMode === 'pen' ? 'select' : 'pen';
+        document.getElementById('wrap').classList.toggle('mode-draw', STATE.activeMode === 'pen');
+        if (penToggle) penToggle.classList.toggle('active', STATE.activeMode === 'pen');
+        toast(STATE.activeMode === 'pen' ? 'Pen Mode Active 🖊' : 'Select Mode Active ✋');
+      }
+    });
+  });
+
+  const backdrop = document.getElementById('backdrop');
+  if (backdrop) backdrop.addEventListener('click', closeDrawers);
+
+  document.querySelectorAll('.color-swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      const b = STATE.blocks.find(x => x.id === STATE.selectedId);
+      if (b) {
+        b.bg = sw.dataset.c;
+        renderBlocks(); saveData(); toast('Color updated!');
+      } else {
+        STATE.drawColor = sw.dataset.c;
+        toast('Pen color changed!');
+      }
+    });
+  });
+
+  const undoBtn = document.getElementById('btn-undo');
+  if (undoBtn) undoBtn.addEventListener('click', undo);
+
+  const redoBtn = document.getElementById('btn-redo');
+  if (redoBtn) redoBtn.addEventListener('click', redo);
+
+  buildBlockDrawerList();
+  buildStickerDrawerList();
+  buildTemplateDrawerList();
+}
+
+function openDrawer(id) {
+  closeDrawers();
+  document.getElementById(id).classList.add('open');
+  document.getElementById('backdrop').classList.add('open');
+}
+
+function closeDrawers() {
+  document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open'));
+  document.getElementById('backdrop').classList.remove('open');
+}
+
+function buildBlockDrawerList() {
+  const container = document.getElementById('grid-blocks-list');
+  const items = [
+    { type: 'ribbon', icon: '🎗️', label: 'Header Ribbon' },
+    { type: 'banner-day', icon: '🎀', label: 'Weekday Ribbon' },
+    { type: 'washi-todo', icon: '📝', label: 'To-Do List' },
+    { type: 'spiral-note', icon: '📔', label: 'Spiral Notepad' },
+    { type: 'card-stacked', icon: '📌', label: 'Reminder Card' },
+    { type: 'badge-num', icon: '🥇', label: 'Badge' },
+    { type: 'divider-vine', icon: '🌿', label: 'Leaf Vine' },
+    { type: 'islamic-salah', icon: '🕌', label: 'Salah Tracker' },
+    { type: 'text', icon: '✍️', label: 'Text Note' }
+  ];
+  container.innerHTML = '';
+  items.forEach(it => {
+    const card = document.createElement('div');
+    card.className = 'block-card';
+    card.innerHTML = `<span class="block-card-icon">${it.icon}</span><span class="block-card-label">${it.label}</span>`;
+    function addBlk() {
+      pushHistory();
+      let b;
+      if (it.type === 'banner-day') {
+        b = { id: uid(), type: 'banner-day', text: '♡ - Monday - ♡', bg: '#A8E0D8', x: STATE.targetPos.x, y: STATE.targetPos.y, w: 160, h: 38, rot: 0 };
+      } else if (it.type === 'ribbon') {
+        b = { id: uid(), type: 'ribbon', text: '♡ Section Title ♡', bg: '#FDE49C', x: STATE.targetPos.x, y: STATE.targetPos.y, w: 185, h: 42, rot: 0 };
+      } else if (it.type === 'spiral-note') {
+        b = { id: uid(), type: 'spiral-note', text: 'Notes & Ideas ✏️...', x: STATE.targetPos.x, y: STATE.targetPos.y, w: 160, h: 155, rot: 0 };
+      } else if (it.type === 'washi-todo') {
+        b = { id: uid(), type: 'washi-todo', title: 'To Do List', items: [{text:'New Task',done:false},{text:'Second Goal',done:false}], x: STATE.targetPos.x, y: STATE.targetPos.y, w: 185, h: 160, rot: 0 };
+      } else if (it.type === 'card-stacked') {
+        b = { id: uid(), type: 'card-stacked', text: '📌 Important Note...', x: STATE.targetPos.x, y: STATE.targetPos.y, w: 160, h: 80, rot: 0 };
+      } else if (it.type === 'badge-num') {
+        b = { id: uid(), type: 'badge-num', num: '1', x: STATE.targetPos.x, y: STATE.targetPos.y, w: 42, h: 50, rot: 0 };
+      } else if (it.type === 'divider-vine') {
+        b = { id: uid(), type: 'divider-vine', text: '🌿 🌿 🌿 🌿 🌿', x: STATE.targetPos.x, y: STATE.targetPos.y, w: 185, h: 28, rot: 0 };
+      } else if (it.type === 'islamic-salah') {
+        b = { id: uid(), type: 'islamic-salah', x: STATE.targetPos.x, y: STATE.targetPos.y, w: 185, h: 185, rot: 0, prayerState: { Fajr: true, Dhuhr: true, Asr: false, Maghrib: false, Isha: false } };
+      } else {
+        b = { id: uid(), type: it.type, text: 'New Note', x: STATE.targetPos.x, y: STATE.targetPos.y, w: 160, h: 60, rot: 0 };
+      }
+      STATE.blocks.push(b);
+      selectBlock(b.id);
+      renderBlocks(); saveData(); closeDrawers(); toast(it.label + ' placed at tap!');
+    }
+    card.addEventListener('click', addBlk);
+    card.addEventListener('touchend', addBlk);
+    container.appendChild(card);
+  });
+}
+
+function buildStickerDrawerList() {
+  const packContainer = document.getElementById('pack-content-area');
+  const tabs = document.querySelectorAll('.pack-tab');
+  
+  function renderPack(idx) {
+    tabs.forEach(t => t.classList.toggle('active', parseInt(t.dataset.pack) === idx));
+    packContainer.innerHTML = '';
+    if (idx < STICKER_PACKS.length) {
+      const p = STICKER_PACKS[idx];
+      const list = document.createElement('div');
+      list.className = 'sticker-quotes-list';
+      p.items.forEach(it => {
+        const q = document.createElement('div');
+        q.className = 'quote-item';
+        q.style.backgroundColor = it.bg;
+        q.innerHTML = `<span>${it.emoji}</span><span>${it.text}</span>`;
+        function addQ() {
+          pushHistory();
+          const b = { id: uid(), type: 'card-stacked', text: `${it.emoji} ${it.text}`, bg: it.bg, x: STATE.targetPos.x, y: STATE.targetPos.y, w: 170, h: 75, rot: 0 };
+          STATE.blocks.push(b);
+          selectBlock(b.id);
+          renderBlocks(); saveData(); closeDrawers(); toast('Cutout placed at tap!');
+        }
+        q.addEventListener('click', addQ);
+        q.addEventListener('touchend', addQ);
+        list.appendChild(q);
+      });
+      packContainer.appendChild(list);
+    }
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      renderPack(parseInt(tab.dataset.pack));
+    });
+  });
+
+  renderPack(0);
+
+  const matrix = document.getElementById('sticker-matrix-list');
+  matrix.innerHTML = '';
+  STICKER_DATA.forEach(st => {
+    const btn = document.createElement('div');
+    btn.className = 'btn-sticker';
+    btn.innerText = st;
+    function addSticker() {
+      pushHistory();
+      const b = { id: uid(), type: 'sticker', emoji: st, x: STATE.targetPos.x, y: STATE.targetPos.y, w: 45, h: 45, rot: 0 };
+      STATE.blocks.push(b);
+      selectBlock(b.id);
+      renderBlocks(); saveData(); closeDrawers(); toast('Sticker placed at tap!');
+    }
+    btn.addEventListener('click', addSticker);
+    btn.addEventListener('touchend', addSticker);
+    matrix.appendChild(btn);
+  });
+}
+
+function buildTemplateDrawerList() {
+  const container = document.getElementById('template-list-items');
+  const tpls = [
+    { type: 'bujo', title: 'Pastel Hand-Drawn Elements ✿', desc: 'Ribbons, washi todo, spiral note, badges, vines & salah', fn: loadExactPastelSpread },
+    { type: 'study', title: 'Study & Exam Sprint 📚', desc: 'Spiral study notes, checkpoints & exam tips', fn: loadStudySpread }
+  ];
+  container.innerHTML = '';
+  tpls.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'tpl-card';
+    card.innerHTML = `<span class="tpl-card-icon">${t.type==='study'?'📚':'✿'}</span><div class="tpl-card-info"><div class="tpl-card-title">${t.title}</div><div class="tpl-card-desc">${t.desc}</div></div>`;
+    function loadTpl() {
+      pushHistory();
+      t.fn(t.title);
+      renderBlocks(); saveData(); closeDrawers(); toast('Spread Loaded! ✨');
+    }
+    card.addEventListener('click', loadTpl);
+    card.addEventListener('touchend', loadTpl);
+    container.appendChild(card);
+  });
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.innerText = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+window.onload = init;
+</script>
+</body>
+</html>

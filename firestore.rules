@@ -1,0 +1,869 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model: AYXA Planner Pro (أجندة المرأة المسلمة الذكية)
+    // ===============================================================
+    //
+    // Collection: /users/{userId}
+    // Document ID: Firebase Auth UID matching the authenticated user.
+    // Fields:
+    //   - id: string (optional, must match userId if provided)
+    //   - userId / uid: string (optional, must match userId if provided)
+    //   - name: string (optional, max 100 chars)
+    //   - email: string (optional, max 128 chars, valid email format)
+    //   - avatar: string (optional, max 1000 chars, URL or path)
+    //   - emoji: string (optional, max 32 chars)
+    //   - focus: list (optional, max 30 items)
+    //   - isGuest: bool (optional)
+    //   - isPro: bool (optional)
+    //   - setupDone: bool (optional)
+    //   - emailVerified: bool (optional)
+    //   - authType: string (optional, max 32 chars)
+    //   - syncState: map (optional, metadata for local-first sync)
+    //   - createdAt: string | timestamp (optional, immutable)
+    //   - updatedAt: string | timestamp (optional)
+    //   - lastActiveAt: string | timestamp (optional)
+    //   - lastSyncedAt: string | timestamp (optional)
+    //
+    // Subcollection: /users/{userId}/tasks/{taskId}
+    // Document ID: Task UUID or client identifier.
+    // Fields:
+    //   - id: string (optional, must match taskId if provided)
+    //   - userId: string (optional, must match userId if provided)
+    //   - title: string (required, 1-300 chars)
+    //   - tag: string (optional, max 60 chars)
+    //   - due: string (optional, max 60 chars)
+    //   - dueDate: string (optional, max 30 chars, YYYY-MM-DD)
+    //   - optionalTime: string (optional, max 30 chars, HH:MM)
+    //   - priority: string (optional, 'high' | 'medium' | 'low')
+    //   - isTopThree: bool (optional)
+    //   - reminder: bool (optional)
+    //   - reminderTime: string (optional, max 30 chars)
+    //   - repeatRule: string (optional, 'none' | 'daily' | 'weekly' | 'monthly' | 'custom')
+    //   - subtasks: list (optional, max 100 subtasks)
+    //   - notes: string (optional, max 5000 chars)
+    //   - done: bool (optional)
+    //   - doneDate: string (optional, max 30 chars)
+    //   - completedAt: string | timestamp (optional)
+    //   - createdAt: string | timestamp (optional, immutable)
+    //   - updatedAt: string | timestamp (optional)
+    //
+    // Subcollection: /users/{userId}/habits/{habitId}
+    // Document ID: Habit UUID or client identifier.
+    // Fields:
+    //   - id: string (optional, must match habitId if provided)
+    //   - userId: string (optional, must match userId if provided)
+    //   - name: string (required, 1-150 chars)
+    //   - nameAr: string (optional, max 150 chars)
+    //   - emoji: string (optional, max 32 chars)
+    //   - category: string (optional, max 60 chars)
+    //   - trackingType: string (optional, 'check' | 'count' | 'duration')
+    //   - targetValue: number (optional)
+    //   - currentValue: number (optional)
+    //   - unit: string (optional, max 30 chars)
+    //   - scheduleType: string (optional, 'daily' | 'weekdays' | 'custom' | 'frequency')
+    //   - scheduledDays: list (optional, max 7 integers [0-6])
+    //   - weeklyFrequency: number (optional)
+    //   - preferredTime: string (optional, max 30 chars)
+    //   - reminder: bool (optional)
+    //   - reminderTime: string (optional, max 30 chars)
+    //   - startDate: string (optional, max 30 chars)
+    //   - notes: string (optional, max 2000 chars)
+    //   - status: string (optional, 'active' | 'paused' | 'archived')
+    //   - streak: number (optional)
+    //   - bestStreak: number (optional)
+    //   - days: list (optional, max 31 boolean flags)
+    //   - lastChecked: string (optional, max 30 chars)
+    //   - history: map (optional, date-keyed completion records)
+    //   - sourceBundleId: string (optional, max 60 chars)
+    //   - sourceBundleHabitId: string (optional, max 60 chars)
+    //   - sharedSourceId: string (optional, max 60 chars)
+    //   - createdAt: string | timestamp (optional, immutable)
+    //   - updatedAt: string | timestamp (optional)
+    //
+    // Subcollection: /users/{userId}/journal/{entryId}
+    // Document ID: Journal entry UUID or client identifier.
+    // Fields:
+    //   - id: string (optional, must match entryId if provided)
+    //   - userId: string (optional, must match userId if provided)
+    //   - date: string (optional, max 30 chars, YYYY-MM-DD)
+    //   - time: string (optional, max 30 chars)
+    //   - title: string (optional, max 200 chars)
+    //   - body: string (required, max 50000 chars)
+    //   - templateId: string (optional, max 60 chars)
+    //   - promptId: string (optional, max 60 chars)
+    //   - promptText: string (optional, max 500 chars)
+    //   - mood: string (optional, max 50 chars)
+    //   - energy: string (optional, 'low' | 'medium' | 'high')
+    //   - tags: list (optional, max 30 tags)
+    //   - sticker: string (optional, max 50 chars)
+    //   - locked: bool (optional)
+    //   - archived: bool (optional)
+    //   - attachments: list (optional, max 20 items)
+    //   - wordCount: number (optional)
+    //   - isBarakahJar: bool (optional)
+    //   - paperColor: string (optional, max 40 chars)
+    //   - flowerStyle: string (optional, max 40 chars)
+    //   - createdAt: string | timestamp (optional, immutable)
+    //   - updatedAt: string | timestamp (optional)
+    //
+    // Subcollection: /users/{userId}/timeCapsules/{capsuleId}
+    // Document ID: Capsule UUID or client identifier.
+    // Fields:
+    //   - id: string (optional, must match capsuleId if provided)
+    //   - userId: string (optional, must match userId if provided)
+    //   - status: string (optional, 'draft' | 'sealed' | 'opened')
+    //   - title: string (optional, max 200 chars)
+    //   - body: string (required, max 50000 chars)
+    //   - openingDate: string (optional, max 30 chars, YYYY-MM-DD)
+    //   - sealingTimezone: string (optional, max 60 chars)
+    //   - createdAt: string | timestamp (optional, immutable)
+    //   - updatedAt: string | timestamp (optional)
+    //   - sealedAt: string | timestamp (optional)
+    //   - openedAt: string | timestamp (optional)
+    //   - unsealedEarly: bool (optional)
+    //   - attachments: list (optional, max 10 attachments)
+    //   - visionBoardSnapshot: map (optional snapshot payload)
+    //   - reminderEnabled: bool (optional)
+    //   - reminderScheduledFor: string (optional, max 50 chars)
+    //   - replyJournalId: string (optional, max 60 chars)
+    //   - paperTheme: string (optional, 'blush' | 'cream' | 'lavender' | 'mint')
+    //   - stampStyle: string (optional, 'flower' | 'heart' | 'moon' | 'bird')
+    //
+    // Subcollection: /users/{userId}/goals/{goalId}
+    // Document ID: Goal UUID or client identifier.
+    // Fields:
+    //   - id: string (optional, must match goalId if provided)
+    //   - userId: string (optional, must match userId if provided)
+    //   - title: string (required, 1-200 chars)
+    //   - titleAr: string (optional, max 200 chars)
+    //   - description: string (optional, max 2000 chars)
+    //   - why: string (optional, max 2000 chars)
+    //   - successVision: string (optional, max 2000 chars)
+    //   - icon: string (optional, max 32 chars)
+    //   - area: string (optional, max 60 chars)
+    //   - status: string (optional, 'active' | 'completed' | 'archived' | 'paused')
+    //   - isFocusGoal: bool (optional)
+    //   - progressMethod: string (optional, 'milestones' | 'numeric' | 'linked' | 'manual')
+    //   - progress: number (optional, range 0-100)
+    //   - target: string (optional, max 100 chars)
+    //   - startDate: string (optional, max 30 chars)
+    //   - targetDate: string (optional, max 30 chars)
+    //   - startingValue: number (optional)
+    //   - currentValue: number (optional)
+    //   - targetValue: number (optional)
+    //   - unit: string (optional, max 40 chars)
+    //   - milestones: list (optional, max 50 items)
+    //   - linkedSources: list (optional, max 50 items)
+    //   - nextAction: string (optional, max 500 chars)
+    //   - checkInFrequency: string (optional, max 40 chars)
+    //   - reminder: bool (optional)
+    //   - reminderDate: string (optional, max 50 chars)
+    //   - notes: string (optional, max 5000 chars)
+    //   - checkIns: list (optional, max 100 items)
+    //   - completedAt: string | timestamp (optional)
+    //   - createdAt: string | timestamp (optional, immutable)
+    //   - updatedAt: string | timestamp (optional)
+    //
+    // Subcollection: /users/{userId}/visionBoards/{boardId}
+    // Document ID: Vision board UUID.
+    // Fields:
+    //   - id: string (optional, must match boardId if provided)
+    //   - userId: string (optional, must match userId if provided)
+    //   - title: string (required, 1-150 chars)
+    //   - titleAr: string (optional, max 150 chars)
+    //   - description: string (optional, max 2000 chars)
+    //   - descriptionAr: string (optional, max 2000 chars)
+    //   - timeHorizon: string (optional, max 100 chars)
+    //   - theme: string (optional, 'blossom' | 'lavender' | 'butter' | 'mint' | 'minimal')
+    //   - layout: string (optional, 'collage' | 'grid' | 'scrapbook')
+    //   - coverImageUrl: string (optional, max 250000 chars)
+    //   - showDecorations: bool (optional)
+    //   - showCaptions: bool (optional)
+    //   - showGoalProgress: bool (optional)
+    //   - isPinnedToHome: bool (optional)
+    //   - status: string (optional, 'active' | 'archived')
+    //   - items: list (optional, max 100 items)
+    //   - createdAt: string | timestamp (optional, immutable)
+    //   - updatedAt: string | timestamp (optional)
+    //
+    // Subcollection: /users/{userId}/focusSessions/{sessionId}
+    // Document ID: Focus session UUID.
+    // Fields:
+    //   - id: string (optional, must match sessionId if provided)
+    //   - userId: string (optional, must match userId if provided)
+    //   - mode: string (optional, 'pomodoro' | 'timer' | 'stopwatch')
+    //   - status: string (optional, 'idle' | 'running' | 'paused' | 'break_running' | 'break_paused' | 'awaiting_next_phase' | 'completed' | 'cancelled')
+    //   - phase: string (optional, 'focus' | 'short_break' | 'long_break')
+    //   - sourceType: string (optional, 'task' | 'subject' | 'goal' | 'business' | 'learning' | 'free')
+    //   - sourceId: string (optional, max 60 chars)
+    //   - sourceLabelSnapshot: string (optional, max 200 chars)
+    //   - presetId: string (optional, max 60 chars)
+    //   - plannedFocusSeconds: number (optional)
+    //   - plannedShortBreakSeconds: number (optional)
+    //   - plannedLongBreakSeconds: number (optional)
+    //   - plannedCycles: number (optional)
+    //   - currentCycle: number (optional)
+    //   - startedAt: string | timestamp (optional)
+    //   - plannedEndAt: string | timestamp (optional)
+    //   - endedAt: string | timestamp (optional)
+    //   - pausedAt: string | timestamp (optional)
+    //   - totalPausedSeconds: number (optional)
+    //   - actualFocusSeconds: number (optional)
+    //   - actualBreakSeconds: number (optional)
+    //   - completionType: string (optional, max 30 chars)
+    //   - isManual: bool (optional)
+    //   - localDate: string (optional, max 30 chars)
+    //   - focusRating: number (optional)
+    //   - privateNote: string (optional, max 2000 chars)
+    //   - ambientSoundId: string (optional, max 60 chars)
+    //   - idempotencyKey: string (optional, max 100 chars)
+    //   - createdAt: string | timestamp (optional, immutable)
+    //   - updatedAt: string | timestamp (optional)
+    //
+    // Subcollection: /users/{userId}/finance/{transactionId}
+    // Document ID: Transaction or account UUID.
+    // Fields:
+    //   - id: string (optional, must match transactionId if provided)
+    //   - userId: string (optional, must match userId if provided)
+    //   - type: string (optional, max 40 chars)
+    //   - status: string (optional, max 30 chars)
+    //   - categoryId: string (optional, max 100 chars)
+    //   - category: string (optional, max 100 chars)
+    //   - merchantOrSource: string (optional, max 200 chars)
+    //   - label: string (optional, max 200 chars)
+    //   - amount: number (optional)
+    //   - occurredAt: string | timestamp (optional)
+    //   - date: string (optional, max 30 chars)
+    //   - localDate: string (optional, max 30 chars)
+    //   - note: string (optional, max 2000 chars)
+    //   - tags: list (optional, max 20 items)
+    //   - recurringTemplateId: string (optional, max 60 chars)
+    //   - originalTransactionId: string (optional, max 60 chars)
+    //   - sourceType: string (optional, max 40 chars)
+    //   - sourceId: string (optional, max 60 chars)
+    //   - idempotencyKey: string (optional, max 100 chars)
+    //   - receiptAttachment: string (optional, max 250000 chars)
+    //   - legs: list (optional, max 20 ledger items)
+    //   - name: string (optional, max 100 chars, for account records)
+    //   - balanceClass: string (optional, 'asset' | 'liability')
+    //   - currency: string (optional, max 10 chars)
+    //   - openingBalanceMinor: number (optional)
+    //   - icon: string (optional, max 32 chars)
+    //   - color: string (optional, max 30 chars)
+    //   - includeInTotals: bool (optional)
+    //   - createdAt: string | timestamp (optional, immutable)
+    //   - updatedAt: string | timestamp (optional)
+    //   - voidedAt: string | timestamp (optional)
+    //   - deletedAt: string | timestamp (optional)
+    //   - archivedAt: string | timestamp (optional)
+    //
+    // Subcollection: /users/{userId}/settings/{settingId}
+    // Document ID: Setting category key ('preferences', 'deen', 'journal', 'wellness', etc.)
+    // Fields:
+    //   - id: string (optional, must match settingId if provided)
+    //   - userId: string (optional, must match userId if provided)
+    //   - theme: string (optional, max 30 chars)
+    //   - appearanceMode: string (optional, max 20 chars)
+    //   - textScale: string (optional, max 20 chars)
+    //   - dateFormat: string (optional, max 30 chars)
+    //   - timeFormat: string (optional, max 20 chars)
+    //   - weekStartDay: string (optional, max 20 chars)
+    //   - defaultLandingRoute: string (optional, max 50 chars)
+    //   - completedTaskVisibility: string (optional, max 30 chars)
+    //   - hapticFeedback: bool (optional)
+    //   - quietHours: map (optional)
+    //   - notifications: map (optional)
+    //   - privacy: map (optional)
+    //   - accessibility: map (optional)
+    //   - prayerSettings: map (optional)
+    //   - journalLock: map (optional)
+    //   - currency: string (optional, max 10 chars)
+    //   - reminderTime: string (optional, max 30 chars)
+    //   - soundType: string (optional, max 30 chars)
+    //   - soundNotif: bool (optional)
+    //   - quoteNotif: bool (optional)
+    //   - dhikrNotif: bool (optional)
+    //   - taskNotif: bool (optional)
+    //   - data: map (optional generic settings payload)
+    //   - value: map (optional generic preferences payload)
+    //   - createdAt: string | timestamp (optional, immutable)
+    //   - updatedAt: string | timestamp (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Root Level Default Deny
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Core Security Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    function isCorrectUserScope(data, userId) {
+      return (!('userId' in data) || data.userId == userId) &&
+             (!('uid' in data) || data.uid == userId);
+    }
+
+    function matchesDocId(data, docId) {
+      return !('id' in data) || data.id == docId;
+    }
+
+    function isOptionalString(data, field, maxLen) {
+      return !(field in data) || (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    function isOptionalNumber(data, field) {
+      return !(field in data) || (data[field] is number);
+    }
+
+    function isOptionalBool(data, field) {
+      return !(field in data) || (data[field] is bool);
+    }
+
+    function isOptionalList(data, field, maxSize) {
+      return !(field in data) || (data[field] is list && data[field].size() <= maxSize);
+    }
+
+    function isOptionalMap(data, field) {
+      return !(field in data) || (data[field] is map);
+    }
+
+    function isOptionalTimestampOrString(data, field) {
+      return !(field in data) ||
+             data[field] == null ||
+             data[field] is timestamp ||
+             (data[field] is string && data[field].size() <= 60);
+    }
+
+    // ===============================================================
+    // Domain Validators (Enforced on BOTH create and update)
+    // ===============================================================
+
+    function isValidUserProfile(data, userId) {
+      let allowedKeys = [
+        'id', 'userId', 'uid', 'name', 'email', 'avatar', 'emoji', 'focus',
+        'isGuest', 'isPro', 'setupDone', 'emailVerified', 'authType',
+        'syncState', 'createdAt', 'updatedAt', 'lastActiveAt', 'lastSyncedAt'
+      ];
+      return data.keys().hasOnly(allowedKeys) &&
+             isCorrectUserScope(data, userId) &&
+             matchesDocId(data, userId) &&
+             isOptionalString(data, 'name', 100) &&
+             isOptionalString(data, 'email', 128) &&
+             isOptionalString(data, 'avatar', 1000) &&
+             isOptionalString(data, 'emoji', 32) &&
+             isOptionalList(data, 'focus', 30) &&
+             isOptionalBool(data, 'isGuest') &&
+             isOptionalBool(data, 'isPro') &&
+             isOptionalBool(data, 'setupDone') &&
+             isOptionalBool(data, 'emailVerified') &&
+             isOptionalString(data, 'authType', 32) &&
+             isOptionalMap(data, 'syncState') &&
+             isOptionalTimestampOrString(data, 'createdAt') &&
+             isOptionalTimestampOrString(data, 'updatedAt') &&
+             isOptionalTimestampOrString(data, 'lastActiveAt') &&
+             isOptionalTimestampOrString(data, 'lastSyncedAt');
+    }
+
+    function isValidTask(data, taskId, userId) {
+      let allowedKeys = [
+        'id', 'userId', 'title', 'tag', 'due', 'dueDate', 'optionalTime',
+        'priority', 'isTopThree', 'reminder', 'reminderTime', 'repeatRule',
+        'subtasks', 'notes', 'done', 'doneDate', 'completedAt', 'createdAt', 'updatedAt'
+      ];
+      return data.keys().hasOnly(allowedKeys) &&
+             isCorrectUserScope(data, userId) &&
+             matchesDocId(data, taskId) &&
+             (data.title is string && data.title.size() > 0 && data.title.size() <= 300) &&
+             isOptionalString(data, 'tag', 60) &&
+             isOptionalString(data, 'due', 60) &&
+             isOptionalString(data, 'dueDate', 30) &&
+             isOptionalString(data, 'optionalTime', 30) &&
+             (!('priority' in data) || data.priority in ['high', 'medium', 'low']) &&
+             isOptionalBool(data, 'isTopThree') &&
+             isOptionalBool(data, 'reminder') &&
+             isOptionalString(data, 'reminderTime', 30) &&
+             (!('repeatRule' in data) || data.repeatRule in ['none', 'daily', 'weekly', 'monthly', 'custom']) &&
+             isOptionalList(data, 'subtasks', 100) &&
+             isOptionalString(data, 'notes', 5000) &&
+             isOptionalBool(data, 'done') &&
+             isOptionalString(data, 'doneDate', 30) &&
+             isOptionalTimestampOrString(data, 'completedAt') &&
+             isOptionalTimestampOrString(data, 'createdAt') &&
+             isOptionalTimestampOrString(data, 'updatedAt');
+    }
+
+    function isValidHabit(data, habitId, userId) {
+      let allowedKeys = [
+        'id', 'userId', 'emoji', 'name', 'nameAr', 'category', 'trackingType',
+        'targetValue', 'currentValue', 'unit', 'scheduleType', 'scheduledDays',
+        'weeklyFrequency', 'preferredTime', 'reminder', 'reminderTime',
+        'startDate', 'notes', 'status', 'streak', 'bestStreak', 'days',
+        'lastChecked', 'history', 'sourceBundleId', 'sourceBundleHabitId',
+        'sharedSourceId', 'createdAt', 'updatedAt'
+      ];
+      return data.keys().hasOnly(allowedKeys) &&
+             isCorrectUserScope(data, userId) &&
+             matchesDocId(data, habitId) &&
+             (data.name is string && data.name.size() > 0 && data.name.size() <= 150) &&
+             isOptionalString(data, 'nameAr', 150) &&
+             isOptionalString(data, 'emoji', 32) &&
+             isOptionalString(data, 'category', 60) &&
+             (!('trackingType' in data) || data.trackingType in ['check', 'count', 'duration']) &&
+             isOptionalNumber(data, 'targetValue') &&
+             isOptionalNumber(data, 'currentValue') &&
+             isOptionalString(data, 'unit', 30) &&
+             (!('scheduleType' in data) || data.scheduleType in ['daily', 'weekdays', 'custom', 'frequency']) &&
+             isOptionalList(data, 'scheduledDays', 7) &&
+             isOptionalNumber(data, 'weeklyFrequency') &&
+             isOptionalString(data, 'preferredTime', 30) &&
+             isOptionalBool(data, 'reminder') &&
+             isOptionalString(data, 'reminderTime', 30) &&
+             isOptionalString(data, 'startDate', 30) &&
+             isOptionalString(data, 'notes', 2000) &&
+             (!('status' in data) || data.status in ['active', 'paused', 'archived']) &&
+             isOptionalNumber(data, 'streak') &&
+             isOptionalNumber(data, 'bestStreak') &&
+             isOptionalList(data, 'days', 31) &&
+             isOptionalString(data, 'lastChecked', 30) &&
+             isOptionalMap(data, 'history') &&
+             isOptionalString(data, 'sourceBundleId', 60) &&
+             isOptionalString(data, 'sourceBundleHabitId', 60) &&
+             isOptionalString(data, 'sharedSourceId', 60) &&
+             isOptionalTimestampOrString(data, 'createdAt') &&
+             isOptionalTimestampOrString(data, 'updatedAt');
+    }
+
+    function isValidJournalEntry(data, entryId, userId) {
+      let allowedKeys = [
+        'id', 'userId', 'date', 'time', 'title', 'body', 'templateId',
+        'promptId', 'promptText', 'mood', 'energy', 'tags', 'sticker',
+        'locked', 'archived', 'attachments', 'wordCount', 'isBarakahJar',
+        'paperColor', 'flowerStyle', 'createdAt', 'updatedAt'
+      ];
+      return data.keys().hasOnly(allowedKeys) &&
+             isCorrectUserScope(data, userId) &&
+             matchesDocId(data, entryId) &&
+             (data.body is string && data.body.size() <= 50000) &&
+             isOptionalString(data, 'date', 30) &&
+             isOptionalString(data, 'time', 30) &&
+             isOptionalString(data, 'title', 200) &&
+             isOptionalString(data, 'templateId', 60) &&
+             isOptionalString(data, 'promptId', 60) &&
+             isOptionalString(data, 'promptText', 500) &&
+             isOptionalString(data, 'mood', 50) &&
+             (!('energy' in data) || data.energy in ['low', 'medium', 'high']) &&
+             isOptionalList(data, 'tags', 30) &&
+             isOptionalString(data, 'sticker', 50) &&
+             isOptionalBool(data, 'locked') &&
+             isOptionalBool(data, 'archived') &&
+             isOptionalList(data, 'attachments', 20) &&
+             isOptionalNumber(data, 'wordCount') &&
+             isOptionalBool(data, 'isBarakahJar') &&
+             isOptionalString(data, 'paperColor', 40) &&
+             isOptionalString(data, 'flowerStyle', 40) &&
+             isOptionalTimestampOrString(data, 'createdAt') &&
+             isOptionalTimestampOrString(data, 'updatedAt');
+    }
+
+    function isValidTimeCapsule(data, capsuleId, userId) {
+      let allowedKeys = [
+        'id', 'userId', 'status', 'title', 'body', 'openingDate',
+        'sealingTimezone', 'createdAt', 'updatedAt', 'sealedAt',
+        'openedAt', 'unsealedEarly', 'attachments', 'visionBoardSnapshot',
+        'reminderEnabled', 'reminderScheduledFor', 'replyJournalId',
+        'paperTheme', 'stampStyle'
+      ];
+      return data.keys().hasOnly(allowedKeys) &&
+             isCorrectUserScope(data, userId) &&
+             matchesDocId(data, capsuleId) &&
+             (data.body is string && data.body.size() <= 50000) &&
+             (!('status' in data) || data.status in ['draft', 'sealed', 'opened']) &&
+             isOptionalString(data, 'title', 200) &&
+             isOptionalString(data, 'openingDate', 30) &&
+             isOptionalString(data, 'sealingTimezone', 60) &&
+             isOptionalBool(data, 'unsealedEarly') &&
+             isOptionalList(data, 'attachments', 10) &&
+             isOptionalMap(data, 'visionBoardSnapshot') &&
+             isOptionalBool(data, 'reminderEnabled') &&
+             isOptionalString(data, 'reminderScheduledFor', 50) &&
+             isOptionalString(data, 'replyJournalId', 60) &&
+             (!('paperTheme' in data) || data.paperTheme in ['blush', 'cream', 'lavender', 'mint']) &&
+             (!('stampStyle' in data) || data.stampStyle in ['flower', 'heart', 'moon', 'bird']) &&
+             isOptionalTimestampOrString(data, 'sealedAt') &&
+             isOptionalTimestampOrString(data, 'openedAt') &&
+             isOptionalTimestampOrString(data, 'createdAt') &&
+             isOptionalTimestampOrString(data, 'updatedAt');
+    }
+
+    function isValidGoal(data, goalId, userId) {
+      let allowedKeys = [
+        'id', 'userId', 'title', 'titleAr', 'description', 'why',
+        'successVision', 'icon', 'area', 'status', 'isFocusGoal',
+        'progressMethod', 'progress', 'target', 'startDate', 'targetDate',
+        'startingValue', 'currentValue', 'targetValue', 'unit', 'milestones',
+        'linkedSources', 'nextAction', 'checkInFrequency', 'reminder',
+        'reminderDate', 'notes', 'checkIns', 'completedAt', 'createdAt', 'updatedAt'
+      ];
+      return data.keys().hasOnly(allowedKeys) &&
+             isCorrectUserScope(data, userId) &&
+             matchesDocId(data, goalId) &&
+             (data.title is string && data.title.size() > 0 && data.title.size() <= 200) &&
+             isOptionalString(data, 'titleAr', 200) &&
+             isOptionalString(data, 'description', 2000) &&
+             isOptionalString(data, 'why', 2000) &&
+             isOptionalString(data, 'successVision', 2000) &&
+             isOptionalString(data, 'icon', 32) &&
+             isOptionalString(data, 'area', 60) &&
+             (!('status' in data) || data.status in ['active', 'completed', 'archived', 'paused']) &&
+             isOptionalBool(data, 'isFocusGoal') &&
+             (!('progressMethod' in data) || data.progressMethod in ['milestones', 'numeric', 'linked', 'manual']) &&
+             isOptionalNumber(data, 'progress') &&
+             (!('progress' in data) || (data.progress >= 0 && data.progress <= 100)) &&
+             isOptionalString(data, 'target', 100) &&
+             isOptionalString(data, 'startDate', 30) &&
+             isOptionalString(data, 'targetDate', 30) &&
+             isOptionalNumber(data, 'startingValue') &&
+             isOptionalNumber(data, 'currentValue') &&
+             isOptionalNumber(data, 'targetValue') &&
+             isOptionalString(data, 'unit', 40) &&
+             isOptionalList(data, 'milestones', 50) &&
+             isOptionalList(data, 'linkedSources', 50) &&
+             isOptionalString(data, 'nextAction', 500) &&
+             isOptionalString(data, 'checkInFrequency', 40) &&
+             isOptionalBool(data, 'reminder') &&
+             isOptionalString(data, 'reminderDate', 50) &&
+             isOptionalString(data, 'notes', 5000) &&
+             isOptionalList(data, 'checkIns', 100) &&
+             isOptionalTimestampOrString(data, 'completedAt') &&
+             isOptionalTimestampOrString(data, 'createdAt') &&
+             isOptionalTimestampOrString(data, 'updatedAt');
+    }
+
+    function isValidVisionBoard(data, boardId, userId) {
+      let allowedKeys = [
+        'id', 'userId', 'title', 'titleAr', 'description', 'descriptionAr',
+        'timeHorizon', 'theme', 'layout', 'coverImageUrl', 'showDecorations',
+        'showCaptions', 'showGoalProgress', 'isPinnedToHome', 'status',
+        'items', 'createdAt', 'updatedAt'
+      ];
+      return data.keys().hasOnly(allowedKeys) &&
+             isCorrectUserScope(data, userId) &&
+             matchesDocId(data, boardId) &&
+             (data.title is string && data.title.size() > 0 && data.title.size() <= 150) &&
+             isOptionalString(data, 'titleAr', 150) &&
+             isOptionalString(data, 'description', 2000) &&
+             isOptionalString(data, 'descriptionAr', 2000) &&
+             isOptionalString(data, 'timeHorizon', 100) &&
+             (!('theme' in data) || data.theme in ['blossom', 'lavender', 'butter', 'mint', 'minimal']) &&
+             (!('layout' in data) || data.layout in ['collage', 'grid', 'scrapbook']) &&
+             isOptionalString(data, 'coverImageUrl', 250000) &&
+             isOptionalBool(data, 'showDecorations') &&
+             isOptionalBool(data, 'showCaptions') &&
+             isOptionalBool(data, 'showGoalProgress') &&
+             isOptionalBool(data, 'isPinnedToHome') &&
+             (!('status' in data) || data.status in ['active', 'archived']) &&
+             isOptionalList(data, 'items', 100) &&
+             isOptionalTimestampOrString(data, 'createdAt') &&
+             isOptionalTimestampOrString(data, 'updatedAt');
+    }
+
+    function isValidVisionBoardItem(data, itemId, userId) {
+      let allowedKeys = [
+        'id', 'boardId', 'userId', 'type', 'title', 'content', 'imageUrl',
+        'photoUrl', 'imageAspectRatio', 'caption', 'accentColor', 'linkedGoalId',
+        'order', 'rotation', 'sticker', 'washiColor', 'createdAt', 'updatedAt'
+      ];
+      return data.keys().hasOnly(allowedKeys) &&
+             isCorrectUserScope(data, userId) &&
+             matchesDocId(data, itemId) &&
+             (!('type' in data) || data.type in ['photo', 'text', 'wish', 'linked_goal']) &&
+             isOptionalString(data, 'boardId', 60) &&
+             isOptionalString(data, 'title', 200) &&
+             isOptionalString(data, 'content', 2000) &&
+             isOptionalString(data, 'imageUrl', 250000) &&
+             isOptionalString(data, 'photoUrl', 250000) &&
+             isOptionalString(data, 'imageAspectRatio', 20) &&
+             isOptionalString(data, 'caption', 500) &&
+             isOptionalString(data, 'accentColor', 30) &&
+             isOptionalString(data, 'linkedGoalId', 60) &&
+             isOptionalNumber(data, 'order') &&
+             isOptionalNumber(data, 'rotation') &&
+             isOptionalString(data, 'sticker', 30) &&
+             isOptionalString(data, 'washiColor', 30) &&
+             isOptionalTimestampOrString(data, 'createdAt') &&
+             isOptionalTimestampOrString(data, 'updatedAt');
+    }
+
+    function isValidFocusSession(data, sessionId, userId) {
+      let allowedKeys = [
+        'id', 'userId', 'mode', 'status', 'phase', 'sourceType', 'sourceId',
+        'sourceLabelSnapshot', 'presetId', 'plannedFocusSeconds',
+        'plannedShortBreakSeconds', 'plannedLongBreakSeconds', 'plannedCycles',
+        'currentCycle', 'startedAt', 'plannedEndAt', 'endedAt', 'pausedAt',
+        'totalPausedSeconds', 'actualFocusSeconds', 'actualBreakSeconds',
+        'completionType', 'isManual', 'localDate', 'focusRating', 'privateNote',
+        'ambientSoundId', 'idempotencyKey', 'createdAt', 'updatedAt'
+      ];
+      return data.keys().hasOnly(allowedKeys) &&
+             isCorrectUserScope(data, userId) &&
+             matchesDocId(data, sessionId) &&
+             (!('mode' in data) || data.mode in ['pomodoro', 'timer', 'stopwatch']) &&
+             (!('status' in data) || data.status in ['idle', 'running', 'paused', 'break_running', 'break_paused', 'awaiting_next_phase', 'completed', 'cancelled']) &&
+             (!('phase' in data) || data.phase in ['focus', 'short_break', 'long_break']) &&
+             (!('sourceType' in data) || data.sourceType in ['task', 'subject', 'goal', 'business', 'learning', 'free']) &&
+             isOptionalString(data, 'sourceId', 60) &&
+             isOptionalString(data, 'sourceLabelSnapshot', 200) &&
+             isOptionalString(data, 'presetId', 60) &&
+             isOptionalNumber(data, 'plannedFocusSeconds') &&
+             isOptionalNumber(data, 'plannedShortBreakSeconds') &&
+             isOptionalNumber(data, 'plannedLongBreakSeconds') &&
+             isOptionalNumber(data, 'plannedCycles') &&
+             isOptionalNumber(data, 'currentCycle') &&
+             isOptionalTimestampOrString(data, 'startedAt') &&
+             isOptionalTimestampOrString(data, 'plannedEndAt') &&
+             isOptionalTimestampOrString(data, 'endedAt') &&
+             isOptionalTimestampOrString(data, 'pausedAt') &&
+             isOptionalNumber(data, 'totalPausedSeconds') &&
+             isOptionalNumber(data, 'actualFocusSeconds') &&
+             isOptionalNumber(data, 'actualBreakSeconds') &&
+             isOptionalString(data, 'completionType', 30) &&
+             isOptionalBool(data, 'isManual') &&
+             isOptionalString(data, 'localDate', 30) &&
+             isOptionalNumber(data, 'focusRating') &&
+             isOptionalString(data, 'privateNote', 2000) &&
+             isOptionalString(data, 'ambientSoundId', 60) &&
+             isOptionalString(data, 'idempotencyKey', 100) &&
+             isOptionalTimestampOrString(data, 'createdAt') &&
+             isOptionalTimestampOrString(data, 'updatedAt');
+    }
+
+    function isValidFinanceRecord(data, transactionId, userId) {
+      let allowedKeys = [
+        'id', 'userId', 'type', 'status', 'categoryId', 'category', 'merchantOrSource',
+        'label', 'amount', 'occurredAt', 'date', 'localDate', 'note', 'tags',
+        'recurringTemplateId', 'originalTransactionId', 'sourceType', 'sourceId',
+        'idempotencyKey', 'receiptAttachment', 'legs', 'name', 'balanceClass',
+        'currency', 'openingBalanceMinor', 'icon', 'color', 'includeInTotals',
+        'createdAt', 'updatedAt', 'voidedAt', 'deletedAt', 'archivedAt'
+      ];
+      return data.keys().hasOnly(allowedKeys) &&
+             isCorrectUserScope(data, userId) &&
+             matchesDocId(data, transactionId) &&
+             isOptionalString(data, 'type', 40) &&
+             isOptionalString(data, 'status', 30) &&
+             isOptionalString(data, 'categoryId', 100) &&
+             isOptionalString(data, 'category', 100) &&
+             isOptionalString(data, 'merchantOrSource', 200) &&
+             isOptionalString(data, 'label', 200) &&
+             isOptionalNumber(data, 'amount') &&
+             isOptionalTimestampOrString(data, 'occurredAt') &&
+             isOptionalString(data, 'date', 30) &&
+             isOptionalString(data, 'localDate', 30) &&
+             isOptionalString(data, 'note', 2000) &&
+             isOptionalList(data, 'tags', 20) &&
+             isOptionalString(data, 'recurringTemplateId', 60) &&
+             isOptionalString(data, 'originalTransactionId', 60) &&
+             isOptionalString(data, 'sourceType', 40) &&
+             isOptionalString(data, 'sourceId', 60) &&
+             isOptionalString(data, 'idempotencyKey', 100) &&
+             isOptionalString(data, 'receiptAttachment', 250000) &&
+             isOptionalList(data, 'legs', 20) &&
+             isOptionalString(data, 'name', 100) &&
+             (!('balanceClass' in data) || data.balanceClass in ['asset', 'liability']) &&
+             isOptionalString(data, 'currency', 10) &&
+             isOptionalNumber(data, 'openingBalanceMinor') &&
+             isOptionalString(data, 'icon', 32) &&
+             isOptionalString(data, 'color', 30) &&
+             isOptionalBool(data, 'includeInTotals') &&
+             isOptionalTimestampOrString(data, 'createdAt') &&
+             isOptionalTimestampOrString(data, 'updatedAt') &&
+             isOptionalTimestampOrString(data, 'voidedAt') &&
+             isOptionalTimestampOrString(data, 'deletedAt') &&
+             isOptionalTimestampOrString(data, 'archivedAt');
+    }
+
+    function isValidSetting(data, settingId, userId) {
+      let allowedKeys = [
+        'id', 'userId', 'theme', 'appearanceMode', 'textScale', 'dateFormat',
+        'timeFormat', 'weekStartDay', 'defaultLandingRoute', 'completedTaskVisibility',
+        'hapticFeedback', 'quietHours', 'notifications', 'privacy', 'accessibility',
+        'prayerSettings', 'journalLock', 'currency', 'reminderTime', 'soundType',
+        'soundNotif', 'quoteNotif', 'dhikrNotif', 'taskNotif', 'data', 'value',
+        'updatedAt', 'createdAt'
+      ];
+      return data.keys().hasOnly(allowedKeys) &&
+             isCorrectUserScope(data, userId) &&
+             matchesDocId(data, settingId) &&
+             isOptionalString(data, 'theme', 30) &&
+             isOptionalString(data, 'appearanceMode', 20) &&
+             isOptionalString(data, 'textScale', 20) &&
+             isOptionalString(data, 'dateFormat', 30) &&
+             isOptionalString(data, 'timeFormat', 20) &&
+             isOptionalString(data, 'weekStartDay', 20) &&
+             isOptionalString(data, 'defaultLandingRoute', 50) &&
+             isOptionalString(data, 'completedTaskVisibility', 30) &&
+             isOptionalBool(data, 'hapticFeedback') &&
+             isOptionalMap(data, 'quietHours') &&
+             isOptionalMap(data, 'notifications') &&
+             isOptionalMap(data, 'privacy') &&
+             isOptionalMap(data, 'accessibility') &&
+             isOptionalMap(data, 'prayerSettings') &&
+             isOptionalMap(data, 'journalLock') &&
+             isOptionalString(data, 'currency', 10) &&
+             isOptionalString(data, 'reminderTime', 30) &&
+             isOptionalString(data, 'soundType', 30) &&
+             isOptionalBool(data, 'soundNotif') &&
+             isOptionalBool(data, 'quoteNotif') &&
+             isOptionalBool(data, 'dhikrNotif') &&
+             isOptionalBool(data, 'taskNotif') &&
+             isOptionalMap(data, 'data') &&
+             isOptionalMap(data, 'value') &&
+             isOptionalTimestampOrString(data, 'createdAt') &&
+             isOptionalTimestampOrString(data, 'updatedAt');
+    }
+
+    // ===============================================================
+    // User Profile & Subcollection Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Complete tenant isolation: Only document owner can read, create, update, or delete
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) &&
+                       isValidUserProfile(request.resource.data, userId);
+      allow update: if isOwner(userId) &&
+                       isValidUserProfile(request.resource.data, userId) &&
+                       areImmutableFieldsUnchanged(['id', 'createdAt']);
+      allow delete: if isOwner(userId);
+
+      // Tasks Subcollection
+      match /tasks/{taskId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidTask(request.resource.data, taskId, userId);
+        allow update: if isOwner(userId) &&
+                         isValidTask(request.resource.data, taskId, userId) &&
+                         areImmutableFieldsUnchanged(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      // Habits Subcollection
+      match /habits/{habitId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidHabit(request.resource.data, habitId, userId);
+        allow update: if isOwner(userId) &&
+                         isValidHabit(request.resource.data, habitId, userId) &&
+                         areImmutableFieldsUnchanged(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      // Journal Subcollection
+      match /journal/{entryId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidJournalEntry(request.resource.data, entryId, userId);
+        allow update: if isOwner(userId) &&
+                         isValidJournalEntry(request.resource.data, entryId, userId) &&
+                         areImmutableFieldsUnchanged(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      // Future Me Time Capsules Subcollection
+      match /timeCapsules/{capsuleId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidTimeCapsule(request.resource.data, capsuleId, userId);
+        allow update: if isOwner(userId) &&
+                         isValidTimeCapsule(request.resource.data, capsuleId, userId) &&
+                         areImmutableFieldsUnchanged(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      // Goals Subcollection
+      match /goals/{goalId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidGoal(request.resource.data, goalId, userId);
+        allow update: if isOwner(userId) &&
+                         isValidGoal(request.resource.data, goalId, userId) &&
+                         areImmutableFieldsUnchanged(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      // Vision Boards Subcollection
+      match /visionBoards/{boardId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidVisionBoard(request.resource.data, boardId, userId);
+        allow update: if isOwner(userId) &&
+                         isValidVisionBoard(request.resource.data, boardId, userId) &&
+                         areImmutableFieldsUnchanged(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+
+        // Optional Vision Board Items Subcollection
+        match /items/{itemId} {
+          allow read: if isOwner(userId);
+          allow create: if isOwner(userId) &&
+                           isValidVisionBoardItem(request.resource.data, itemId, userId);
+          allow update: if isOwner(userId) &&
+                           isValidVisionBoardItem(request.resource.data, itemId, userId) &&
+                           areImmutableFieldsUnchanged(['id', 'createdAt']);
+          allow delete: if isOwner(userId);
+        }
+      }
+
+      // Focus Sessions Subcollection
+      match /focusSessions/{sessionId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidFocusSession(request.resource.data, sessionId, userId);
+        allow update: if isOwner(userId) &&
+                         isValidFocusSession(request.resource.data, sessionId, userId) &&
+                         areImmutableFieldsUnchanged(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      // Finance Subcollection
+      match /finance/{transactionId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidFinanceRecord(request.resource.data, transactionId, userId);
+        allow update: if isOwner(userId) &&
+                         isValidFinanceRecord(request.resource.data, transactionId, userId) &&
+                         areImmutableFieldsUnchanged(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      // Settings Subcollection
+      match /settings/{settingId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidSetting(request.resource.data, settingId, userId);
+        allow update: if isOwner(userId) &&
+                         isValidSetting(request.resource.data, settingId, userId) &&
+                         areImmutableFieldsUnchanged(['id', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AYXA Planner Pro — Review Findings & Analysis Report</title>
+  <meta name="description" content="Complete analysis, verification results, and technical fixes for AYXA Planner Pro browser review findings.">
+  <style>
+    :root {
+      --bg: #fffbfd;
+      --card-bg: #ffffff;
+      --ink: #331d2c;
+      --ink-muted: #6e5567;
+      --border: #f3dce8;
+      --hotpink: #e04770;
+      --accent: #9d4edd;
+      --badge-bg: #fdf2f7;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      margin: 0;
+      padding: 24px;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      padding: 32px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(224, 71, 112, 0.06);
+    }
+    h1, h2, h3 {
+      color: var(--ink);
+      font-weight: 800;
+    }
+    h1 {
+      font-size: 26px;
+      margin-top: 0;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 12px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 32px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    h3 {
+      font-size: 16px;
+      margin-top: 24px;
+      color: var(--hotpink);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+    }
+    th {
+      background-color: var(--badge-bg);
+      font-weight: 700;
+    }
+    .badge-fixed {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #e6f9ed;
+      color: #107e3e;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    code, pre {
+      background: #f8f1f5;
+      color: #4a2138;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+    }
+    code {
+      padding: 2px 6px;
+    }
+    pre {
+      padding: 14px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+    }
+    ul, ol {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    .meta-box {
+      background: var(--badge-bg);
+      border-left: 4px solid var(--hotpink);
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+    a {
+      color: var(--hotpink);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AYXA Planner Pro — Review Findings & Analysis Report</h1>
+    
+    <div class="meta-box">
+      <strong>Application:</strong> AYXA Planner Pro (TanStack Start / React / Tailwind / Capacitor)<br>
+      <strong>Workspace:</strong> <code>c:\Users\TLZCodes\Desktop\ProPlanner_AI</code><br>
+      <strong>Untouched Master:</strong> <code>c:\Users\TLZCodes\Desktop\ProPlanner</code> (100% preserved)<br>
+      <strong>Verification Suite:</strong> <code>node --test tests/*.test.mjs</code> (177 tests passing across 42 suites)<br>
+      <strong>Build Status:</strong> Clean production build (Vite client, SSR, Nitro cloudflare-module, and Capacitor Android/iOS assets synchronized).
+    </div>
+
+    <h2>1. Summary Status Table</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Finding</th>
+          <th>Topic</th>
+          <th>Status</th>
+          <th>Summary of Fix & Verification</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Finding 1</strong></td>
+          <td>Weekly Reset: Missing Habit Denominator</td>
+          <td><span class="badge-fixed">Fixed & Verified</span></td>
+          <td>Updated <code>weeklyHabitEngine.ts</code> and <code>ResetOverviewStep.tsx</code>. Excludes future occurrences from current-week denominator; displays complete numerator and denominator (e.g. <code>4 / 10</code>) and localized supporting sentence. Zero-habit case shows neutral badge without division by zero.</td>
+        </tr>
+        <tr>
+          <td><strong>Finding 2</strong></td>
+          <td>Journal Tabs: Excessive Wrapping</td>
+          <td><span class="badge-fixed">Fixed & Verified</span></td>
+          <td>Replaced cramped 5-button layout with a horizontally scrollable tab strip (<code>overflow-x-auto no-scrollbar scroll-smooth</code>) containing 6 distinct tabs. Labels stay strictly on a single line (<code>whitespace-nowrap shrink-0</code>). 40px touch targets, edge fade scroll cues, and smooth auto-scroll into view when selected.</td>
+        </tr>
+        <tr>
+          <td><strong>Finding 3</strong></td>
+          <td>Vision Board: Duplicate Empty State Actions</td>
+          <td><span class="badge-fixed">Fixed & Verified</span></td>
+          <td>Header action buttons are now rendered only when <code>displayBoards.length &gt; 0</code>. The empty state presents one coherent composition with a single primary "Create my board" action and secondary "Preview layouts" action. Layout previews create 0 user records until confirmed.</td>
+        </tr>
+        <tr>
+          <td><strong>Finding 4</strong></td>
+          <td>Guest Profile: Zero Fabrication & Preservation</td>
+          <td><span class="badge-fixed">Fixed & Verified</span></td>
+          <td>Purged hardcoded demo records (tasks, habits with streak 21, study blocks totaling 255 mins, 30 XP) from <code>defaultState</code> in <code>store.tsx</code>. Fresh guest profiles initialize with 0 XP, 0 streak, and honest empty states. Existing guest and user profiles in <code>localStorage</code> remain 100% intact upon reload/restart.</td>
+        </tr>
+        <tr>
+          <td><strong>Finding 5</strong></td>
+          <td>Future Me Time Capsule: Discoverability & View</td>
+          <td><span class="badge-fixed">Fixed & Verified</span></td>
+          <td>Registered the <code>future_me</code> template card in Journal templates and added a dedicated <code>capsule</code> tab in the navigation strip. Created <code>FutureMeCapsuleView.tsx</code> with sealed envelope cards, countdown chips, leap-year safe date calculations, early unseal support, and strict public view masking.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2. Detailed Root Cause & Targeted Corrections</h2>
+
+    <h3>Finding 1: Weekly Reset Missing Habit Denominator</h3>
+    <ul>
+      <li><strong>Root Cause:</strong> In <code>ResetOverviewStep.tsx</code>, the component attempted to read <code>metrics.habitProgress.scheduledOccurrences</code>, which was absent from the <code>WeeklyHabitProgress</code> return type of <code>computeWeeklyProgress()</code>. Consequently, <code>habitDenominator</code> evaluated to <code>undefined</code>, rendering <code>4 /</code> and an incomplete supporting sentence.</li>
+      <li><strong>Correction:</strong>
+        <ol>
+          <li>Updated <code>src/lib/weeklyHabitEngine.ts</code> to export <code>scheduledOccurrences</code> in <code>WeeklyHabitProgress</code> (<code>weekInfo.isCurrentWeek ? dueOccurrences : totalWholeWeekPossible</code>).</li>
+          <li>Updated <code>ResetOverviewStep.tsx</code> to read canonical metrics and format localized sentences:
+            <ul>
+              <li><strong>English:</strong> <code>{completed} completed of {denominator} scheduled through today</code></li>
+              <li><strong>Arabic:</strong> <code>{completed} من أصل {denominator} عادة مستحقة حتى اليوم</code></li>
+            </ul>
+          </li>
+          <li>Handled zero-habit cases with a neutral badge (<code>No Habits</code> / <code>لا عادات</code>) and <code>0 / 0</code>.</li>
+        </ol>
+      </li>
+    </ul>
+
+    <h3>Finding 2: Journal Tabs Excessive Multi-line Wrapping</h3>
+    <ul>
+      <li><strong>Root Cause:</strong> Journal tabs used <code>flex-1</code> across all buttons within a <code>max-w-md</code> container, squeezing 5 tabs into small viewports (&le;390px) and forcing labels like "Week in Bloom 🌷" to wrap across several lines.</li>
+      <li><strong>Correction:</strong>
+        <ol>
+          <li>Replaced the flex container with a horizontally scrollable container (<code>overflow-x-auto no-scrollbar scroll-smooth</code>).</li>
+          <li>Applied <code>whitespace-nowrap shrink-0</code> to all 6 tabs, guaranteeing single-line readability.</li>
+          <li>Added smooth auto-scrolling into view (<code>activeTabRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })</code>).</li>
+          <li>Added edge gradient fade scroll cues and 40px accessible touch targets.</li>
+          <li>Added <code>aria-hidden="true"</code> to Lucide SVG icons.</li>
+        </ol>
+      </li>
+    </ul>
+
+    <h3>Finding 3: Vision Board Duplicate Empty State Actions</h3>
+    <ul>
+      <li><strong>Root Cause:</strong> <code>VisionBoardCollection.tsx</code> rendered "Create my board" and "Preview layouts" buttons in the sticky header as well as in the empty state card below it.</li>
+      <li><strong>Correction:</strong> Wrapped header buttons with <code>{displayBoards.length &gt; 0 &amp;&amp; (...)}</code>. When empty, only the card actions appear. Layout previews create 0 records until explicitly confirmed.</li>
+    </ul>
+
+    <h3>Finding 4: Guest Data Honest Zero-Fabrication</h3>
+    <ul>
+      <li><strong>Root Cause:</strong> <code>defaultState</code> in <code>store.tsx</code> had hardcoded demo records (tasks, habits with streak 21, study minutes totaling 255, 30 XP). Fresh guest launches received fabricated history.</li>
+      <li><strong>Correction:</strong> Initialized all <code>defaultState</code> arrays to <code>[]</code> and <code>xp: 0</code>. Updated <code>loadInitialState</code> to preserve existing user records while ensuring fresh profiles start completely clean.</li>
+    </ul>
+
+    <h3>Finding 5: Future Me Time Capsule Discoverability & Experience</h3>
+    <ul>
+      <li><strong>Root Cause:</strong> The core logic existed in <code>futureMeEngine.ts</code>, but was absent from Journal templates, lacked a navigation tab, and had no view component.</li>
+      <li><strong>Correction:</strong> Added <code>future_me</code> template card, added <code>capsule</code> tab to Journal, and built <code>FutureMeCapsuleView.tsx</code> with sealed envelope cards, live countdown chips, composer modal, leap-year safe date calculations, and <code>maskSealedCapsuleForPublicView</code> for privacy.</li>
+    </ul>
+
+    <h2>3. Automated Verification Results</h2>
+    <h3>Test Suite: 177 / 177 Passing (42 Suites)</h3>
+    <pre><code>$ npm test
+✔ AYXA Self-care Bingo Engine &amp; Verification Suite
+✔ AYXA Planner Pro — Settings &amp; Preferences Engine
+✔ Someday Garden - Normalization &amp; Defaults
+✔ Vision Board Engine &amp; Store Rules
+✔ AYXA My Week in Bloom Engine &amp; Verification Suite
+✔ Weekly Habit Board Engine
+✔ Weekly Reset Studio Engine
+✔ Wheel of Becoming Engine
+✔ AYXA Review Findings Verification Suite (Finding 1, 4, 5, 6)
+
+ℹ tests 177
+ℹ suites 42
+ℹ pass 177
+ℹ fail 0
+ℹ duration_ms 1673.19</code></pre>
+
+    <h3>Production Build Verification</h3>
+    <pre><code>$ npm run build
+✓ vite v8.1.5 client built in 12.73s
+✓ vite v8.1.5 ssr built in 9.83s
+✓ Nitro cloudflare-module built in 3.62s
+Detected Capacitor JS Entry: index-Uypa9oav.js
+Detected Capacitor CSS Entry: styles-DiCJToCY.css
+Successfully updated .output/public/index.html with bundled JS and CSS assets!
+Successfully synced capacitor.config.json to android/app/src/main/assets/capacitor.config.json
+Successfully synced capacitor.config.json to ios/App/App/capacitor.config.json
+Successfully synchronized clean assets to android/app/src/main/assets/public!
+Successfully synchronized clean assets to ios/App/App/public!</code></pre>
+
+    <h2>4. Live URLs & Verification Links</h2>
+    <ul>
+      <li><strong>Static HTML Report (Optimal for ChatGPT / Crawlers):</strong> <a href="https://incoming-europe-columnists-coordinated.trycloudflare.com/report.html">https://incoming-europe-columnists-coordinated.trycloudflare.com/report.html</a></li>
+      <li><strong>Raw Markdown File:</strong> <a href="https://incoming-europe-columnists-coordinated.trycloudflare.com/report.md">https://incoming-europe-columnists-coordinated.trycloudflare.com/report.md</a></li>
+      <li><strong>Plain Text File:</strong> <a href="https://incoming-europe-columnists-coordinated.trycloudflare.com/report.txt">https://incoming-europe-columnists-coordinated.trycloudflare.com/report.txt</a></li>
+      <li><strong>Live Application:</strong> <a href="https://incoming-europe-columnists-coordinated.trycloudflare.com">https://incoming-europe-columnists-coordinated.trycloudflare.com</a></li>
+    </ul>
+  </div>
+</body>
+</html>

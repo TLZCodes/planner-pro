@@ -1,0 +1,421 @@
+@import "tailwindcss" source(none);
+@import "tw-animate-css";
+@source "../src";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* ── ANDROID WEBVIEW ZERO-LATENCY TOUCH & SMOOTH RENDERING OPTIMIZATIONS ─── */
+/* ══════════════════════════════════════════════════════════════════════════ */
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+a,
+[role="button"],
+.cursor-pointer {
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  pointer-events: auto !important;
+}
+
+/* Guarantee 100% responsive typing, focus, and native IME without freezing */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  pointer-events: auto !important;
+}
+
+@media (max-height: 520px) {
+  nav.fixed.bottom-0 {
+    display: none !important;
+  }
+}
+
+@theme inline {
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
+
+  --font-display: "Pacifico", "Dancing Script", "Playfair Display", cursive;
+  --font-sans: "Quicksand", "Outfit", "Cairo", "Tajawal", "Alexandria", system-ui, sans-serif;
+  --font-caption: "Quicksand", "Nunito", "Outfit", "Cairo", system-ui, sans-serif;
+  --font-script: "Dancing Script", "Great Vibes", "Pacifico", cursive;
+  --font-arabic: "Cairo", "Tajawal", "Alexandria", "Almarai", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-babypink: var(--babypink);
+  --color-hotpink: var(--hotpink);
+  --color-rose: var(--rose);
+  --color-rosegold: var(--rosegold);
+  --color-islamic: var(--islamic);
+  --color-emerald: var(--emerald);
+  --color-mint: var(--mint);
+  --color-turquoise: var(--turquoise);
+  --color-gold: var(--gold);
+  --color-lavender: var(--lavender);
+  --color-cream: var(--cream);
+  --color-pearl: var(--pearl);
+  --color-ink: var(--ink);
+  --color-ink-light: var(--ink-light);
+  --color-ghost: var(--ghost);
+  --color-danger: var(--danger);
+  --color-card: var(--card);
+  --color-card-foreground: var(--ink);
+  --color-primary: var(--hotpink);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--lavender);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--ghost);
+  --color-muted-foreground: var(--ink-light);
+  --color-accent: var(--surface);
+  --color-accent-foreground: var(--hotpink);
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: #ffffff;
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--hotpink);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--ink);
+}
+
+:root {
+  --radius: 18px;
+  --babypink: #ffb6c1;
+  --hotpink: #ff1493;
+  --rose: #ff69b4;
+  --rosegold: #b76e79;
+  --islamic: #009344;
+  --emerald: #50c878;
+  --mint: #98ff98;
+  --turquoise: #40e0d0;
+  --gold: #d4af37;
+  --lavender: #e6e6fa;
+  --cream: #fff5ee;
+  --pearl: #f5f5f5;
+  --ink: #2b1727;
+  --ink-light: #6e4e64;
+  --ghost: #f7e9f0;
+  --danger: #ef4a6b;
+
+  --canvas: #fff8fa;
+  --surface: #ffeef4;
+  --card: #ffffff;
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --border: #f3d4e3;
+
+  /* Theme gradient */
+  --theme-from: #ff75a0;
+  --theme-to: #ff1493;
+  --gradient-theme: linear-gradient(135deg, var(--theme-from), var(--theme-to));
+
+  --gradient-pink: linear-gradient(135deg, #ff75a0, #ff1493);
+  --gradient-islamic: linear-gradient(135deg, #42b86c, #008037);
+  --gradient-gold: linear-gradient(135deg, #ffd769, #c79e26);
+  --gradient-lavender: linear-gradient(135deg, #bfa8ff, #7c4dff);
+  --gradient-night: linear-gradient(160deg, #181347, #3e337c);
+  --gradient-mint: linear-gradient(135deg, #66ee98, #00c853);
+  --gradient-rosegold: linear-gradient(135deg, #e5a4ad, #a65863);
+
+  --shadow-sm: 0 4px 12px rgba(255, 20, 147, 0.08);
+  --shadow-card: 0 6px 20px rgba(255, 20, 147, 0.12);
+  --shadow-md: 0 14px 36px rgba(255, 20, 147, 0.20);
+  --shadow-glow: 0 0 24px rgba(255, 20, 147, 0.35);
+
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+}
+
+.dark {
+  --canvas: #160b16;
+  --surface: #241222;
+  --card: #281426;
+  --ink: #fcf0f7;
+  --ink-light: #d6b3c9;
+  --ghost: #3a1e37;
+  --lavender: #422956;
+  --border: #4d284b;
+  --background: var(--canvas);
+  --foreground: var(--ink);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: #e5d7df;
+    color: var(--color-foreground);
+    font-family: "Cairo", "Tajawal", "Alexandria", "Quicksand", system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Universal Input & Textarea Performance & IME Responsiveness */
+  input,
+  textarea,
+  select {
+    font-family: "Cairo", "Tajawal", "Alexandria", "Almarai", "Quicksand", system-ui, -apple-system, sans-serif;
+  }
+
+  /* Arabic Typography */
+  [dir="rtl"],
+  [dir="rtl"] body {
+    font-family: "Cairo", "Tajawal", "Alexandria", "Almarai", system-ui, sans-serif;
+    line-height: 1.55;
+  }
+  
+  [dir="rtl"] h1,
+  [dir="rtl"] h2,
+  [dir="rtl"] h3 {
+    font-family: "Cairo", "Alexandria", "Tajawal", system-ui, sans-serif !important;
+    font-weight: 700;
+  }
+
+  [dir="rtl"] .flip-x {
+    transform: scaleX(-1);
+  }
+}
+
+/* Gradients & Shadows */
+@utility grad-theme {
+  background-image: var(--gradient-theme);
+}
+@utility grad-pink {
+  background-image: var(--gradient-pink);
+}
+@utility grad-islamic {
+  background-image: var(--gradient-islamic);
+}
+@utility grad-gold {
+  background-image: var(--gradient-gold);
+}
+@utility grad-lavender {
+  background-image: var(--gradient-lavender);
+}
+@utility grad-night {
+  background-image: var(--gradient-night);
+}
+@utility grad-mint {
+  background-image: var(--gradient-mint);
+}
+@utility grad-rosegold {
+  background-image: var(--gradient-rosegold);
+}
+@utility shadow-rose {
+  box-shadow: var(--shadow-card);
+}
+@utility shadow-rose-md {
+  box-shadow: var(--shadow-md);
+}
+@utility shadow-glow-pink {
+  box-shadow: var(--shadow-glow);
+}
+
+@utility glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.dark .glass-card {
+  background: rgba(40, 20, 38, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@utility text-gradient-pink {
+  background: linear-gradient(135deg, #ff75a0, #ff1493);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@utility text-gradient-gold {
+  background: linear-gradient(135deg, #ffd769, #d4af37);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@utility label-xs {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+@utility arabic {
+  font-family: "Cairo", "Tajawal", "Alexandria", "Almarai", system-ui, sans-serif !important;
+  direction: rtl;
+}
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+@utility washi {
+  background-size: 14px 14px;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop {
+  0% { transform: scale(0.85); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes shimmer-soft {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@utility animate-rise {
+  animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@utility animate-pop {
+  animation: pop 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@utility animate-float-soft {
+  animation: float-soft 4s ease-in-out infinite;
+}
+@utility animate-shimmer-soft {
+  background-size: 200% 100%;
+  animation: shimmer-soft 3s linear infinite;
+}
+
+/* ── Accessibility Support ────────────────────────────────────────────── */
+html[data-text-scale="small"] {
+  font-size: 92%;
+}
+html[data-text-scale="normal"] {
+  font-size: 100%;
+}
+html[data-text-scale="large"] {
+  font-size: 108%;
+}
+html[data-text-scale="extra-large"] {
+  font-size: 116%;
+}
+
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-high-contrast="true"] {
+  --ink: #000000;
+  --border: #9333ea;
+}
+html.dark[data-high-contrast="true"] {
+  --ink: #ffffff;
+  --border: #f472b6;
+  --card: #180a18;
+}
+
+html[data-reduce-transparency="true"] .glass-card,
+html[data-reduce-transparency="true"] [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: var(--card) !important;
+  opacity: 1 !important;
+}
+
+
+@utility font-display {
+  font-family: 'Pacifico', 'Dancing Script', cursive !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.035em !important;
+  line-height: 1.45 !important;
+  padding-bottom: 6px;
+  overflow: visible !important;
+  display: inline-block;
+  -webkit-font-smoothing: antialiased;
+}
+
+@utility font-script {
+  font-family: 'Dancing Script', 'Great Vibes', 'Pacifico', cursive !important;
+  font-weight: 600 !important;
+  line-height: 1.45 !important;
+  padding-bottom: 4px;
+}
+
+@utility font-champagne {
+  font-family: 'Dancing Script', 'Pacifico', cursive !important;
+  line-height: 1.45 !important;
+  padding-bottom: 4px;
+}
+
+@utility font-uthmani {
+  font-family: 'Amiri Quran', 'Amiri', serif !important;
+}
+
+@utility font-caption {
+  font-family: 'Quicksand', 'Nunito', 'Outfit', 'Cairo', system-ui, sans-serif !important;
+}
+
+@utility font-pro-sans {
+  font-family: 'Cairo', 'Tajawal', 'Alexandria', 'Quicksand', system-ui, sans-serif !important;
+}
+
+/* Handwritten Aesthetic Typography */
+h1, .font-display, .header-title, .banner-title {
+  font-family: 'Pacifico', 'Dancing Script', cursive;
+  font-weight: 400;
+  letter-spacing: 0.035em;
+  line-height: 1.45;
+  padding-bottom: 6px;
+  overflow: visible;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subheadings */
+h2, h3, h4, .font-heading {
+  font-family: 'Cairo', 'Tajawal', 'Alexandria', 'Quicksand', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Arabic Headings */
+[dir="rtl"] h1, [dir="rtl"] .font-display, [dir="rtl"] .header-title, [dir="rtl"] .banner-title {
+  font-family: 'Cairo', 'Alexandria', 'Tajawal', system-ui, sans-serif !important;
+  font-weight: 700;
+  letter-spacing: normal;
+  line-height: 1.4;
+}
+
+[dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4 {
+  font-family: 'Cairo', 'Alexandria', 'Tajawal', system-ui, sans-serif !important;
+  font-weight: 700;
+}
+
+/* Quranic & Islamic Athkar */
+.arabic-quran, .quran-verse {
+  font-family: 'Amiri Quran', 'Amiri', serif !important;
+}
+
+/* Navigation */
+nav, footer, .bottom-nav, .nav-item, nav *, .quick-action-label, .icon-label {
+  font-family: 'Cairo', 'Tajawal', 'Alexandria', 'Quicksand', system-ui, sans-serif !important;
+}
