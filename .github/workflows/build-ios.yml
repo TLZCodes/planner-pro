@@ -24,9 +24,6 @@ jobs:
       - name: Build Web Assets
         run: npm run build
 
-      - name: Sync Capacitor iOS
-        run: npx cap sync ios
-
       - name: Build Xcode Project
         run: |
           xcodebuild -project ios/App/App.xcodeproj \
