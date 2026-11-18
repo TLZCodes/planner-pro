@@ -882,7 +882,7 @@ export function applyProposalToStore(
             icon: "🌸",
             color: "rose",
             descriptionEn: "Created from AYXA AI proposal",
-            descriptionAr: "تم إنشاؤه من مقترح مساعدة أيكسا",
+            descriptionAr: "تم إنشاؤه من مقترح AYXA Pro Helper",
             activeDays: [0, 1, 2, 3, 4, 5, 6],
             steps: [
               {

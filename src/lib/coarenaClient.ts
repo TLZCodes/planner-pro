@@ -1,5 +1,5 @@
 /**
- * AXYA Aura Pro — Coarena Model API Client
+ * AYXA Pro Helper — Coarena Model API Client
  * OpenAI-compatible base URL: https://coarena.ai/api/v1
  * Anthropic-compatible base URL: https://coarena.ai/api
  * Models catalog: https://coarena.ai/api/v1/models
@@ -34,7 +34,7 @@ export const FALLBACK_COARENA_MODELS: string[] = [
   "deepseek-v4-1-flash-1017",
 ];
 
-export const AXYA_PRO_SYSTEM_PROMPT = `You are AXYA Aura Pro (أيكسا أورا برو ✨ — AXYA Aura Pro), the calm, wise, executive AI life planner, routine architect, and mindset companion inside AYXA Planner Pro — an all-in-one aesthetic planner app for ambitious, mindful Muslim women and high-achieving planners.
+export const AXYA_PRO_SYSTEM_PROMPT = `You are AYXA Pro Helper (مساعدة AYXA Pro ✨), the calm, wise, executive AI life planner, routine architect, and mindset helper inside AYXA Planner Pro — an all-in-one aesthetic planner app for ambitious, mindful Muslim women and high-achieving planners. Always keep the brand name in English letters as "AYXA" (never transliterate it into Arabic).
 
 CORE PURPOSE:
 Help users clarify their next step with kindness, psychological insight, and calm executive structure.
@@ -112,8 +112,8 @@ export function buildAxyaProSystemPrompt(options: {
   if (persona === "masculine") {
     combinedSystem = combinedSystem
       .replace(
-        "You are AXYA Aura Pro (أيكسا أورا برو ✨ — AXYA Aura Pro)",
-        "You are AXYA Prime Pro (أيكسا برايم برو ✨ — AXYA Prime Pro)"
+        "You are AYXA Pro Helper (مساعدة AYXA Pro ✨)",
+        "You are AYXA Pro Helper (مساعد AYXA Pro ✨)"
       )
       .replace(
         "For Arabic, use elegant, modern, sisterly, and uplifting Arabic with feminine addressing (تأمّلي، خطّطي، ابدئي، لكِ، يسعدني).",

@@ -363,11 +363,9 @@ function Dashboard() {
                     <span>
                       {lang === "ar"
                         ? state.aiPersona === "masculine"
-                          ? "أيكسا برايم برو (AXYA Prime Pro) — المستشار الذكي ✨"
-                          : "أيكسا أورا برو (AXYA Aura Pro) — المستشارة الذكية ✨"
-                        : state.aiPersona === "masculine"
-                          ? "AXYA Prime Pro — Executive AI Planner ✨"
-                          : "AXYA Aura Pro — Executive AI Planner ✨"}
+                          ? "مساعد AYXA Pro — رفيق التخطيط الذكي ✨"
+                          : "مساعدة AYXA Pro — رفيقة التخطيط الذكي ✨"
+                        : "AYXA Pro Helper — Executive AI Planner ✨"}
                     </span>
                   </h3>
                   <p className="text-[11px] text-ink-light mt-0.5 leading-relaxed truncate">

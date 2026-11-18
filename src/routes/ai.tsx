@@ -52,11 +52,11 @@ import { AiSettingsModal } from "@/components/ai/AiSettingsModal";
 export const Route = createFileRoute("/ai")({
   head: () => ({
     meta: [
-      { title: "AXYA Aura Pro ✨ — Executive AI Planning Companion" },
+      { title: "AYXA Pro Helper ✨ — Executive AI Planning Helper" },
       {
         name: "description",
         content:
-          "AXYA Aura Pro — Executive AI planning assistant for Muslim women and ambitious planners: gentle day planning, night shift schedules, goal breakdown, and study routines.",
+          "AYXA Pro Helper — Executive AI planning helper for Muslim women and ambitious planners: gentle day planning, night shift schedules, goal breakdown, and study routines.",
       },
     ],
   }),
@@ -181,8 +181,8 @@ function AiScreen() {
       const derivedTitle = firstUserMsg
         ? firstUserMsg.content.slice(0, 32)
         : isAr
-          ? "محادثة AXYA Pro"
-          : "AXYA Pro Session";
+          ? "محادثة AYXA Pro"
+          : "AYXA Pro Session";
 
       saveAiConversation({
         id: activeConvId,
@@ -322,8 +322,8 @@ function AiScreen() {
         } else {
           setCustomError(
             isAr
-              ? "تعذر الاتصال بمحرك AXYA Aura Pro حالياً — يرجى التحقق من اتصالك بالإنترنت والمحاولة مجدداً."
-              : "Unable to reach AXYA Aura Pro right now — please check your internet connection and try again.",
+              ? "تعذر الاتصال بمحرك AYXA Pro Helper حالياً — يرجى التحقق من اتصالك بالإنترنت والمحاولة مجدداً."
+              : "Unable to reach AYXA Pro Helper right now — please check your internet connection and try again.",
           );
         }
       }
@@ -427,20 +427,18 @@ function AiScreen() {
               <h1 className="font-display text-base font-bold text-ink leading-tight truncate">
                 {isAr
                   ? isFeminine
-                    ? "أيكسا أورا برو (AXYA Aura Pro ✨)"
-                    : "أيكسا برايم برو (AXYA Prime Pro ✨)"
-                  : isFeminine
-                    ? "AXYA Aura Pro ✨"
-                    : "AXYA Prime Pro ✨"}
+                    ? "مساعدة AYXA Pro ✨"
+                    : "مساعد AYXA Pro ✨"
+                  : "AYXA Pro Helper ✨"}
               </h1>
               <p className="text-[11px] font-semibold text-ink-light truncate mt-0.5">
                 {isGenerating
                   ? t("thinking")
                   : isAr
                     ? isFeminine
-                      ? "مستشارتكِ الذكية الاحترافية لتصبح خطوتكِ القادمة أوضح."
-                      : "مستشارك الذكي الاحترافي لتصبح خطوتك القادمة أوضح."
-                    : "Executive Pro AI companion to make your next step clearer."}
+                      ? "مساعدتكِ الذكية الاحترافية لتصبح خطوتكِ القادمة أوضح."
+                      : "مساعدك الذكي الاحترافي لتصبح خطوتك القادمة أوضح."
+                    : "Executive Pro AI helper to make your next step clearer."}
               </p>
             </div>
           </div>
@@ -500,7 +498,7 @@ function AiScreen() {
               onClick={() => setShowSettingsModal(true)}
               aria-label={isAr ? "إعدادات المساعد وحماية الرصيد" : "AI Settings"}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-surface/80 text-ink-light hover:text-ink transition-colors cursor-pointer"
-              title={isAr ? "إعدادات AXYA Aura Pro ⚙️" : "AXYA Aura Pro Settings ⚙️"}
+              title={isAr ? "إعدادات AYXA Pro Helper ⚙️" : "AYXA Pro Helper Settings ⚙️"}
             >
               <Sliders size={16} />
             </button>
@@ -531,7 +529,7 @@ function AiScreen() {
               )}
             >
               <span>🌸</span>
-              <span>{isAr ? "أيكسا أورا برو (Aura Pro)" : "AXYA Aura Pro"}</span>
+              <span>{isAr ? "مساعدة AYXA Pro" : "AYXA Pro Helper (Sister)"}</span>
             </button>
             <button
               type="button"
@@ -544,7 +542,7 @@ function AiScreen() {
               )}
             >
               <span>🌿</span>
-              <span>{isAr ? "أيكسا برايم برو (Prime Pro)" : "AXYA Prime Pro"}</span>
+              <span>{isAr ? "مساعد AYXA Pro" : "AYXA Pro Helper (Brother)"}</span>
             </button>
           </div>
 
@@ -566,11 +564,9 @@ function AiScreen() {
               <span className="font-semibold text-ink text-[11px]">
                 {isAr
                   ? isFeminine
-                    ? "مستشارة AXYA Aura Pro نشطة وجاهزة لمساعدتكِ ✨"
-                    : "مستشار AXYA Prime Pro نشط وجاهز لمساعدتك ✨"
-                  : isFeminine
-                    ? "AXYA Aura Pro Engine Active & Ready ✨"
-                    : "AXYA Prime Pro Engine Active & Ready ✨"}
+                    ? "مساعدة AYXA Pro نشطة وجاهزة لمساعدتكِ ✨"
+                    : "مساعد AYXA Pro نشط وجاهز لمساعدتك ✨"
+                  : "AYXA Pro Helper Active & Ready ✨"}
               </span>
             </div>
             <button
@@ -631,9 +627,9 @@ function AiScreen() {
                 <p className="mt-1 text-[12px] font-medium text-ink-light max-w-sm mx-auto leading-relaxed">
                   {isAr
                     ? isFeminine
-                      ? "مرحباً بكِ في AXYA Aura Pro — مستشارتكِ الذكية الاحترافية لتنظيم يومكِ بعقلية البركة، تيسير الخطوات القادمة، وبناء روتين متوازن يجمع بين الطمأنينة والإنجاز ♡"
-                      : "مرحباً بك في AXYA Prime Pro — مستشارك الذكي الاحترافي لتنظيم يومك بعقلية البركة، تيسير الخطوات القادمة، وبناء روتين متوازن يجمع بين الطمأنينة والإنجاز ♡"
-                    : "Welcome to AXYA Aura Pro — your executive AI companion to clarify your next step with calm structure, mindful routines, and Barakah ♡"}
+                      ? "مرحباً بكِ في AYXA Pro Helper — مساعدتكِ الذكية الاحترافية لتنظيم يومكِ بعقلية البركة، تيسير الخطوات القادمة، وبناء روتين متوازن يجمع بين الطمأنينة والإنجاز ♡"
+                      : "مرحباً بك في AYXA Pro Helper — مساعدك الذكي الاحترافي لتنظيم يومك بعقلية البركة، تيسير الخطوات القادمة، وبناء روتين متوازن يجمع بين الطمأنينة والإنجاز ♡"
+                    : "Welcome to AYXA Pro Helper — your executive AI helper to clarify your next step with calm structure, mindful routines, and Barakah ♡"}
                 </p>
 
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[10px] font-bold">
@@ -787,7 +783,7 @@ function AiScreen() {
                             className="flex items-center gap-1 rounded-full bg-ghost px-3 py-1.5 text-xs font-bold text-ink hover:bg-surface transition-colors cursor-pointer"
                           >
                             <Sparkles size={12} className="text-hotpink" />
-                            <span>{isAr ? "توسيع بالسؤال ✨" : "Ask AXYA Pro ✨"}</span>
+                            <span>{isAr ? "توسيع بالسؤال ✨" : "Ask AYXA Pro ✨"}</span>
                           </button>
                         </div>
                       </div>
@@ -847,11 +843,9 @@ function AiScreen() {
                       <span className="font-bold text-ink-light truncate">
                         {isAr
                           ? isFeminine
-                            ? "أيكسا أورا برو ✨"
-                            : "أيكسا برايم برو ✨"
-                          : isFeminine
-                            ? "AXYA Aura Pro ✨"
-                            : "AXYA Prime Pro ✨"}
+                            ? "مساعدة AYXA Pro ✨"
+                            : "مساعد AYXA Pro ✨"
+                          : "AYXA Pro Helper ✨"}
                       </span>
 
                       <div className="flex items-center gap-2 shrink-0">
@@ -925,8 +919,8 @@ function AiScreen() {
                 <span className="h-2 w-2 rounded-full bg-hotpink animate-ping" />
                 <span>
                   {isAr
-                    ? "أيكسا برو تحلل وتصوغ الخطة..."
-                    : "AXYA Aura Pro is thinking & drafting..."}
+                    ? "مساعدة AYXA Pro تحلل وتصوغ الخطة..."
+                    : "AYXA Pro Helper is thinking & drafting..."}
                 </span>
               </div>
             </div>
@@ -965,8 +959,8 @@ function AiScreen() {
               onChange={(e) => setInput(e.target.value)}
               placeholder={
                 isAr
-                  ? "اسألي أيكسا أورا برو عن أي شيء..."
-                  : "Ask AXYA Aura Pro anything..."
+                  ? "اسألي مساعدة AYXA Pro عن أي شيء..."
+                  : "Ask AYXA Pro Helper anything..."
               }
               className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-light/70 py-1.5"
             />

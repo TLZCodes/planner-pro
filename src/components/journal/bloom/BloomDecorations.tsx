@@ -135,7 +135,7 @@ export function AyxaStampSvg({
       aria-hidden="true"
     >
       <span className="text-[7px] font-black tracking-widest uppercase">
-        {isAr ? "أيكسا" : "AYXA"}
+        {"AYXA"}
       </span>
       <span className="text-[10px] leading-none my-0.5">🌷</span>
       <span className="text-[6px] font-bold tracking-tight">

@@ -73,7 +73,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
             </span>
             <div>
               <h3 className="font-display text-base font-bold text-ink">
-                {isAr ? "إعدادات AXYA Aura Pro ✨" : "AXYA Aura Pro Settings ✨"}
+                {isAr ? "إعدادات AYXA Pro Helper ✨" : "AYXA Pro Helper Settings ✨"}
               </h3>
               <p className="text-[11px] font-semibold text-ink-light">
                 {isAr ? "تحكم في محرك الذكاء الاصطناعي وأسلوب التخطيط" : "Configure AI engine, depth & credit safety"}
@@ -133,10 +133,10 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                   )}
                 </div>
                 <p className="text-xs font-bold text-ink mt-1">
-                  {isAr ? "أيكسا أورا برو (AXYA Aura Pro)" : "AXYA Aura Pro ✨"}
+                  {isAr ? "مساعدة AYXA Pro ✨" : "AYXA Pro Helper (Sister) ✨"}
                 </p>
                 <p className="text-[10px] text-ink-light mt-0.5">
-                  {isAr ? "مستشارة تنفيذية بصيغة أنثوية هادئة" : "Sisterly executive planner"}
+                  {isAr ? "مساعدة تنفيذية بصيغة أنثوية هادئة" : "Sisterly executive planner"}
                 </p>
               </button>
 
@@ -157,10 +157,10 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                   )}
                 </div>
                 <p className="text-xs font-bold text-ink mt-1">
-                  {isAr ? "أيكسا برايم برو (AXYA Prime Pro)" : "AXYA Prime Pro ✨"}
+                  {isAr ? "مساعد AYXA Pro ✨" : "AYXA Pro Helper (Brother) ✨"}
                 </p>
                 <p className="text-[10px] text-ink-light mt-0.5">
-                  {isAr ? "مستشار تنفيذي بصيغة عملية ومنضبطة" : "Focused executive coach"}
+                  {isAr ? "مساعد تنفيذي بصيغة عملية ومنضبطة" : "Focused executive coach"}
                 </p>
               </button>
             </div>
@@ -185,7 +185,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
               {availableModels.map((modelId) => (
                 <option key={modelId} value={modelId}>
                   {modelId === "gpt-6-luna"
-                    ? `✨ ${modelId} (AXYA Pro Default)`
+                    ? `✨ ${modelId} (AYXA Pro Default)`
                     : modelId}
                 </option>
               ))}

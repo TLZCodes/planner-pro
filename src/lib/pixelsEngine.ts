@@ -109,7 +109,7 @@ export const MOOD_PALETTES: Record<MoodPaletteId, MoodPalette> = {
   default: {
     id: "default",
     nameEn: "AYXA Soft Pastel",
-    nameAr: "باستيل أيكسا الناعم",
+    nameAr: "باستيل AYXA الناعم",
     moodColors: {
       happy: "#F472B6",    // Soft Rose
       calm: "#A78BFA",     // Soft Violet

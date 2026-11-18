@@ -2,52 +2,52 @@ export const quotes = [
   {
     en: "She believed she could, so she planned it — then she did it.",
     ar: "آمنت بأنها تستطيع، فخططت لذلك — ثم حققته.",
-    author: { en: "AYXA", ar: "أيكسا" },
+    author: { en: "AYXA", ar: "AYXA" },
   },
   {
     en: "Small steps every day build the life you daydream about.",
     ar: "الخطوات الصغيرة كل يوم تبني الحياة التي تحلمين بها.",
-    author: { en: "AYXA", ar: "أيكسا" },
+    author: { en: "AYXA", ar: "AYXA" },
   },
   {
     en: "Discipline is the softest form of self-love.",
     ar: "الانضباط هو أرق صور حب الذات والاهتمام بمستقبلكِ.",
-    author: { en: "AYXA", ar: "أيكسا" },
+    author: { en: "AYXA", ar: "AYXA" },
   },
   {
     en: "You don't need more hours, you need a clearer page.",
     ar: "لا تحتاجين إلى المزيد من الساعات، بل إلى صفحة أكثر وضوحاً وتنظيماً.",
-    author: { en: "AYXA", ar: "أيكسا" },
+    author: { en: "AYXA", ar: "AYXA" },
   },
   {
     en: "Progress over perfection, always.",
     ar: "التقدم المستمر والاستمرار أهم من الكمال، دائماً وأبداً.",
-    author: { en: "AYXA", ar: "أيكسا" },
+    author: { en: "AYXA", ar: "AYXA" },
   },
   {
     en: "Your future self is watching you right now through memories.",
     ar: "نسختكِ المستقبلية تنظر إليكِ الآن بامتنان وفخر لما تفعلينه اليوم.",
-    author: { en: "AYXA", ar: "أيكسا" },
+    author: { en: "AYXA", ar: "AYXA" },
   },
   {
     en: "Rest is part of the plan, not a reward for finishing it.",
     ar: "الراحة والاسترخاء جزء أصيل من الخطة، وليست مجرد مكافأة عند الانتهاء.",
-    author: { en: "AYXA", ar: "أيكسا" },
+    author: { en: "AYXA", ar: "AYXA" },
   },
   {
     en: "Bloom with grace, work with passion, trust Allah with results.",
     ar: "أزهري بلطف، واعملي بشغف، وتوكلي على الله في كل النتائج.",
-    author: { en: "AYXA Inspiration", ar: "إلهام أيكسا" },
+    author: { en: "AYXA Inspiration", ar: "إلهام AYXA" },
   },
   {
     en: "Protect your peace, honor your routine, and elevate your glow.",
     ar: "احمي سلامكِ الداخلي، وقدّري روتينكِ اليومي، وتألقي بثقة وجمال.",
-    author: { en: "AYXA Inspiration", ar: "إلهام أيكسا" },
+    author: { en: "AYXA Inspiration", ar: "إلهام AYXA" },
   },
   {
     en: "Your consistency today is the miracle of tomorrow.",
     ar: "استمراركِ والتزامكِ اليوم هو سر المعجزة والنجاح غداً بإذن الله.",
-    author: { en: "AYXA Wisdom", ar: "حكمة أيكسا" },
+    author: { en: "AYXA Wisdom", ar: "حكمة AYXA" },
   },
   {
     en: "What is meant for you will never miss you. Keep showing up.",

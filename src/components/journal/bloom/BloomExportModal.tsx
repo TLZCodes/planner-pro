@@ -184,7 +184,7 @@ export function BloomExportModal({
 
             <label className="flex items-center justify-between cursor-pointer select-none">
               <span className="font-bold text-ink">
-                {isAr ? "توقيع أيكسا (AYXA Signature)" : "AYXA Bloom Signature"}
+                {isAr ? "توقيع AYXA" : "AYXA Bloom Signature"}
               </span>
               <input
                 type="checkbox"

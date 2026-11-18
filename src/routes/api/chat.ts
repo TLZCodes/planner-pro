@@ -74,7 +74,7 @@ export const Route = createFileRoute("/api/chat")({
             JSON.stringify({
               error: "SERVER_ERROR",
               message:
-                err?.message || "An error occurred while communicating with the AXYA Aura Pro gateway.",
+                err?.message || "An error occurred while communicating with the AYXA Pro Helper gateway.",
             }),
             { status: 500, headers: { "Content-Type": "application/json" } }
           );

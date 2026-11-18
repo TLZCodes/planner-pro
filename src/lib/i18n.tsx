@@ -12,7 +12,7 @@ type Lang = "en" | "ar";
 
 const dict: Record<string, { en: string; ar: string }> = {
   // Global & Navigation
-  appName: { en: "AYXA Planner Pro", ar: "أيكسا بلانر برو" },
+  appName: { en: "AYXA Planner Pro", ar: "AYXA Planner Pro" },
   tagline: { en: "Your day starts here ✨", ar: "يومك يبدأ هنا ✨" },
   bismillah: { en: "One more day of becoming her ♡", ar: "يومٌ إضافي في رحلة الوصول لأفضل نسخة منكِ ♡" },
   greeting: { en: "Good morning", ar: "صباح الخير" },
@@ -109,7 +109,7 @@ const dict: Record<string, { en: string; ar: string }> = {
   language: { en: "Language", ar: "اللغة" },
   arabic: { en: "العربية", ar: "العربية" },
   english: { en: "English", ar: "English" },
-  proPlannerPremium: { en: "Pro Planner Premium ✨", ar: "أيكسا بلانر بريميوم ✨" },
+  proPlannerPremium: { en: "AYXA Planner Pro ✨", ar: "AYXA Planner Pro ✨" },
   premiumDesc: { en: "APK & PWA Ready · All features unlocked & stored locally on device.", ar: "جاهز كـ APK و PWA · جميع الميزات مفعلة وتُحفظ محليًا." },
   replayOnboarding: { en: "Replay onboarding", ar: "إعادة جولة التعريف" },
   focusTimerPill: { en: "Focus timer", ar: "مؤقت التركيز" },
@@ -686,10 +686,10 @@ const dict: Record<string, { en: string; ar: string }> = {
   privacyAssurance: { en: "🔒 Your health notes and records stay private on your device.", ar: "🔒 جميع بياناتكِ الصحية وملاحظاتكِ محفوظة بخصوصية تامة على جهازكِ." },
 
   // AI Assistant Page
-  ayxaAI: { en: "AXYA Aura Pro ✨", ar: "أيكسا أورا برو ✨" },
-  ayxaAISubtitle: { en: "Executive Pro AI companion to make your next step clearer.", ar: "مستشارتكِ الذكية الاحترافية لتصبح خطوتكِ القادمة أوضح." },
+  ayxaAI: { en: "AYXA Pro Helper ✨", ar: "مساعدة AYXA Pro ✨" },
+  ayxaAISubtitle: { en: "Executive Pro AI helper to make your next step clearer.", ar: "مساعدتكِ الذكية الاحترافية لتصبح خطوتكِ القادمة أوضح." },
   thinking: { en: "Thinking…", ar: "جاري التفكير…" },
-  askAnything: { en: "Ask AXYA Aura Pro anything…", ar: "اسألي أيكسا أورا برو عن أي شيء…" },
+  askAnything: { en: "Ask AYXA Pro Helper anything…", ar: "اسألي مساعدة AYXA Pro عن أي شيء…" },
   bismillahHelp: { en: "Bismillah — how can I help? 🤲", ar: "بسم الله — كيف أستطيع مساعدتكِ؟ 🤲" },
   askDayGoals: { en: "Ask about your day, your goals, your journal or your deen.", ar: "اسألي عن يومكِ، أهدافكِ، مفكرتكِ أو دينكِ." },
   builtInTemplatesTitle: { en: "Built-in Templates (Deterministic)", ar: "قوالب التخطيط المدمجة (الجاهزة)" },
@@ -700,8 +700,8 @@ const dict: Record<string, { en: string; ar: string }> = {
   contextSelectorTitle: { en: "Planner Context & Privacy", ar: "سياق التخطيط والخصوصية" },
   contextNoneShared: { en: "No personal context is shared by default.", ar: "لا يتم مشاركة أي سياق شخصي افتراضياً." },
   providerUnconfiguredNotice: {
-    en: "AYXA AI is running locally — cloud AI model provider is not configured (LOVABLE_API_KEY missing). You can explore built-in smart templates, draft queries, and manage your planner items.",
-    ar: "مساعدة أيكسا تعمل محلياً — مزود الذكاء الاصطناعي السحابي غير مهيأ (مفتاح LOVABLE_API_KEY غير متوفر). يمكنكِ استعراض القوالب المدمجة وإدارة جدولكِ.",
+    en: "AYXA Pro Helper is running locally — you can explore built-in smart templates, draft queries, and manage your planner items.",
+    ar: "مساعدة AYXA Pro تعمل محلياً — يمكنكِ استعراض القوالب المدمجة وإدارة جدولكِ.",
   },
 
   // Months List
@@ -784,7 +784,7 @@ const dict: Record<string, { en: string; ar: string }> = {
   // [deduped] save: { en: "Save", ar: "حفظ" },
 
   // Auth, Guest & Onboarding Consolidated Keys
-  welcomeTitle: { en: "AYXA Planner ✨", ar: "مخطط AYXA ✨" },
+  welcomeTitle: { en: "AYXA Planner Pro ✨", ar: "AYXA Planner Pro ✨" },
   welcomeTagline: { en: "Becoming her, one gentle day at a time.", ar: "خطوة هادئة كل يوم نحو النسخة التي تريدينها." },
   continueAsGuest: { en: "Continue as Guest", ar: "المتابعة كضيفة" },
   guestPrivacyNotice: { en: "Your information is stored on this device. It may be lost if the app is removed, the app’s data is cleared, or you change devices.", ar: "تُحفظ معلوماتكِ على هذا الجهاز، وقد تفقدينها عند حذف التطبيق أو مسح بياناته أو تغيير الجهاز." },
@@ -1662,7 +1662,7 @@ const dict: Record<string, { en: string; ar: string }> = {
   verifyEmailTitle: { en: "Verify Your Email ✉️", ar: "تأكيد بريدكِ الإلكتروني ✉️" },
   verifyEmailSubtitle: { en: "Please verify your email address to enable secure cloud sync.", ar: "يرجى تأكيد بريدكِ الإلكتروني لتفعيل المزامنة السحابية الآمنة." },
   checkYourInbox: { en: "We sent a verification link to", ar: "أرسلنا رابط التحقق إلى" },
-  continueToApp: { en: "Continue to AYXA Planner", ar: "المتابعة إلى أيكسا بلانر" },
+  continueToApp: { en: "Continue to AYXA Planner Pro", ar: "المتابعة إلى AYXA Planner Pro" },
   resendVerification: { en: "Resend Verification Email", ar: "إعادة إرسال بريد التحقق" },
   resendCodeCooldown: { en: "Resend Code", ar: "إعادة إرسال الرمز" },
   verificationResent: { en: "Verification email resent successfully! ✉️", ar: "تمت إعادة إرسال بريد التحقق بنجاح! ✉️" },

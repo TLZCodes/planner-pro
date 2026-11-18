@@ -635,7 +635,7 @@ function ShareCardModal({ badge, award, theme, onChangeTheme, onClose }: ShareCa
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const userName = state.user?.name || (isAr ? "مستخدمة أيكسا" : "AYXA Planner");
+  const userName = state.user?.name || (isAr ? "مستخدمة AYXA" : "AYXA Planner");
   const earnedDateStr = award?.earnedAt ? new Date(award.earnedAt).toLocaleDateString(isAr ? "ar-EG" : "en-US", { year: "numeric", month: "short", day: "numeric" }) : "";
 
   // Draw card onto canvas for crisp PNG export
