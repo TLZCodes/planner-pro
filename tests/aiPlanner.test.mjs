@@ -23,7 +23,12 @@ import {
   FREE_PRO_MODELS,
   buildAxyaProSystemPrompt,
 } from "../src/lib/coarenaClient.ts";
-import { cleanTextForSpeech } from "../src/lib/aiVoiceEngine.ts";
+import {
+  cleanTextForSpeech,
+  detectTextLanguage,
+  splitIntoSpeechChunks,
+  AI_DIALECT_OPTIONS,
+} from "../src/lib/aiVoiceEngine.ts";
 
 test("AI Planner — Default Context Scope: strictly no personal context shared by default", () => {
   assert.equal(DEFAULT_CONTEXT_SCOPE.granted, false);
@@ -468,4 +473,67 @@ test("AI Planner — Coarena API Configuration, 3 Free Models Only, Omni-App Acc
   });
   assert.equal(convWithFeedback.messages[0].requestId, "req_test123");
   assert.equal(convWithFeedback.messages[0].feedbackRating, "good");
+
+  // Verify All Arabic Dialects & World Languages + Fuzzy Omni-App Management
+  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-MA"));
+  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-SA"));
+  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-EG"));
+  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-LB"));
+  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-AE"));
+  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-DZ"));
+  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-IQ"));
+  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "fr-FR"));
+  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "es-ES"));
+  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "de-DE"));
+
+  assert.equal(detectTextLanguage("أهلاً بكِ يا جميلتي في استوديو AYXA"), "ar");
+  assert.equal(detectTextLanguage("Bonjour ma belle, voici ton programme"), "fr");
+  assert.equal(detectTextLanguage("¡Hola hermosa! Vamos a organizar tu día"), "es");
+  assert.equal(detectTextLanguage("Hallo Liebes, ich habe deinen Tag geplant"), "de");
+
+  const darijaPrompt = buildAxyaProSystemPrompt({ dialect: "ar-MA" });
+  assert.ok(darijaPrompt.includes("Moroccan Darija"));
+
+  const chunks = splitIntoSpeechChunks("أهلاً بكِ يا جميلتي. هذه الجملة الثانية لتجربة تقسيم النص الصوتي بنجاح.");
+  assert.ok(chunks.length >= 1);
+
+  // Fuzzy title matching for completing/deleting tasks & habits + sleep/steps/sadaqah/savings
+  const deletedTasks = [];
+  const completedTasks = [];
+  const loggedSleep = [];
+  const loggedSadaqah = [];
+  const liveState = {
+    tasks: [{ id: "task_real_99", title: "Buy pink matcha powder", done: false }],
+    habits: [{ id: "hab_real_77", name: "Morning Stretching", done: false }],
+  };
+
+  applyProposalToStore(
+    { id: "p_comp_fuzzy", type: "complete_task", title: "Buy pink matcha powder", destination: "tasks" },
+    { addTask: () => {}, toggleTask: (id) => completedTasks.push(id) },
+    applied,
+    liveState
+  );
+  applyProposalToStore(
+    { id: "p_del_fuzzy", type: "delete_task", title: "Delete: Buy pink matcha powder", destination: "tasks" },
+    { addTask: () => {}, removeTask: (id) => deletedTasks.push(id) },
+    applied,
+    liveState
+  );
+  applyProposalToStore(
+    { id: "p_sleep", type: "sleep", title: "8h Beauty Sleep", destination: "wellness", amount: 8 },
+    { addTask: () => {}, logSleepRecord: (r) => loggedSleep.push(r) },
+    applied,
+    liveState
+  );
+  applyProposalToStore(
+    { id: "p_sadaqah", type: "sadaqah", title: "Friday Charity", destination: "deen", amount: 50 },
+    { addTask: () => {}, addSadaqahEntry: (s) => loggedSadaqah.push(s) },
+    applied,
+    liveState
+  );
+
+  assert.equal(completedTasks[0], "task_real_99");
+  assert.equal(deletedTasks[0], "task_real_99");
+  assert.equal(loggedSleep[0].durationHours, 8);
+  assert.equal(loggedSadaqah[0].amount, 50);
 });

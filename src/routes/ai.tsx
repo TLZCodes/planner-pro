@@ -52,6 +52,7 @@ import {
   speakAiText,
   stopAiVoice,
   startVoiceRecognition,
+  AI_DIALECT_OPTIONS,
   type VoiceRecognitionSession,
 } from "@/lib/aiVoiceEngine";
 import { AiContextModal } from "@/components/ai/AiContextModal";
@@ -128,6 +129,7 @@ function AiScreen() {
   const isAr = lang === "ar";
   const activeTone: AiSettings["tone"] = state.aiSettings?.tone || "barakah";
   const activeLevel: AiSettings["level"] = state.aiSettings?.level || "balanced";
+  const activeDialect: string = state.aiSettings?.dialect || "auto";
   const fullAppAccess = state.aiSettings?.fullAppAccess !== false;
   const autoExecuteActions = state.aiSettings?.autoExecuteActions !== false;
   const autoVoiceReply = Boolean(state.aiSettings?.autoVoiceReply);
@@ -291,6 +293,7 @@ function AiScreen() {
     let latestTranscript = "";
     const session = startVoiceRecognition({
       lang: isAr ? "ar" : "en",
+      dialect: activeDialect,
       onTranscript: (transcript, isFinal) => {
         latestTranscript = transcript;
         if (showVoiceCallModal) {
@@ -333,6 +336,7 @@ function AiScreen() {
     speakAiText({
       text: cleanDisplay,
       lang: isAr ? "ar" : "en",
+      dialect: activeDialect,
       onStart: () => setSpeakingMessageId(msgId),
       onEnd: () => setSpeakingMessageId((curr) => (curr === msgId ? null : curr)),
       onError: () => setSpeakingMessageId((curr) => (curr === msgId ? null : curr)),
@@ -397,6 +401,7 @@ function AiScreen() {
         persona: "feminine",
         level: activeLevel,
         tone: activeTone,
+        dialect: activeDialect,
         contextSummary: contextSummaryText,
         signal: controller.signal,
         onUpdate: (partialText, reqId) => {
@@ -421,7 +426,7 @@ function AiScreen() {
       if (autoExecuteActions && finalProposals.length > 0) {
         const appliedSet = new Set<string>();
         for (const prop of finalProposals) {
-          const mut = applyProposalToStore(prop, appStore as any, appliedSet);
+          const mut = applyProposalToStore(prop, appStore as any, appliedSet, state);
           if (mut.success) {
             appliedIds.push(prop.id);
           }
@@ -719,6 +724,20 @@ function AiScreen() {
                 );
               })}
             </div>
+
+            <select
+              value={activeDialect}
+              onChange={(e) => updateAiSettings({ dialect: e.target.value })}
+              aria-label={isAr ? "اللهجة أو اللغة" : "Dialect or Language"}
+              className="shrink-0 max-w-[125px] sm:max-w-[160px] rounded-2xl border border-pink-300/60 dark:border-pink-800/50 bg-canvas/95 px-2.5 py-2 text-[10px] font-extrabold text-hotpink hover:border-hotpink focus:outline-none transition-all cursor-pointer truncate"
+              title={isAr ? "اختيار اللهجة العربية أو اللغة العالمية 🌍" : "Choose Arabic Dialect or World Language 🌍"}
+            >
+              {AI_DIALECT_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.flag} {isAr ? opt.labelAr : opt.labelEn}
+                </option>
+              ))}
+            </select>
 
             <button
               type="button"

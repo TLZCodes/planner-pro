@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { X, Sparkles, Zap, Check, Coins, Heart, Volume2 } from "lucide-react";
+import { X, Sparkles, Zap, Check, Coins, Heart, Volume2, Globe } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { useApp, type AiSettings, DEFAULT_AI_SETTINGS } from "@/lib/store";
+import { AI_DIALECT_OPTIONS, speakAiText, stopAiVoice } from "@/lib/aiVoiceEngine";
 import { cn } from "@/lib/utils";
 
 interface AiSettingsModalProps {
@@ -27,6 +28,10 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
   const [autoVoiceReply, setAutoVoiceReply] = useState<boolean>(
     Boolean(currentSettings.autoVoiceReply)
   );
+  const [dialect, setDialect] = useState<string>(
+    currentSettings.dialect || "auto"
+  );
+  const [testingVoice, setTestingVoice] = useState<boolean>(false);
   const [lowCreditThreshold, setLowCreditThreshold] = useState<number>(
     currentSettings.lowCreditAlertThreshold ?? 5
   );
@@ -39,6 +44,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
       setFullAppAccess(currentSettings.fullAppAccess !== false);
       setAutoExecuteActions(currentSettings.autoExecuteActions !== false);
       setAutoVoiceReply(Boolean(currentSettings.autoVoiceReply));
+      setDialect(currentSettings.dialect || "auto");
     }
   }, [
     isOpen,
@@ -47,6 +53,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
     currentSettings.fullAppAccess,
     currentSettings.autoExecuteActions,
     currentSettings.autoVoiceReply,
+    currentSettings.dialect,
   ]);
 
   if (!isOpen) return null;
@@ -58,6 +65,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
       fullAppAccess,
       autoExecuteActions,
       autoVoiceReply,
+      dialect,
       lowCreditAlertThreshold: lowCreditThreshold,
     });
     setSavedSuccess(true);
@@ -227,8 +235,8 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                 </p>
                 <p className="text-[10px] text-ink-light leading-relaxed">
                   {isAr
-                    ? "قراءة ردود AYXA Muse Pro بصوت أنثوي ناعم تلقائياً"
-                    : "Automatically read AYXA Muse Pro replies aloud in a soft feminine voice"}
+                    ? "قراءة ردود AYXA Muse Pro بصوت أنثوي ناعم تلقائياً بجميع اللهجات واللغات"
+                    : "Automatically read AYXA Muse Pro replies aloud in Arabic dialects & world languages"}
                 </p>
               </div>
               <input
@@ -238,6 +246,87 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                 className="h-4 w-4 rounded accent-hotpink shrink-0 cursor-pointer"
               />
             </label>
+
+            {/* 4. Arabic Dialects & World Languages Selector */}
+            <div className="pt-2.5 border-t border-pink-200/40 dark:border-pink-900/40 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-xs font-bold text-ink flex items-center gap-1.5">
+                  <Globe size={13} className="text-hotpink" />
+                  <span>
+                    {isAr
+                      ? "اللهجة العربية أو اللغة المفضلة:"
+                      : "Arabic Dialect & World Language:"}
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (testingVoice) {
+                      stopAiVoice();
+                      setTestingVoice(false);
+                      return;
+                    }
+                    const samples: Record<string, string> = {
+                      "ar-MA": "أهلاً الزين ديالي! أنا AYXA Muse Pro، واجدة نعاونك ترتبي نهارك وأهدافك بكل حب.",
+                      "ar-SA": "يا هلا والله بحبيبتي! أنا AYXA Muse Pro، أبشري بيوم مرتب ومليان بركة وإنجاز.",
+                      "ar-EG": "أهلاً يا قمري! أنا AYXA Muse Pro، جاهزة أرتب لك يومك وأهدافك بأحلى طريقة.",
+                      "ar-LB": "أهلاً حبيبة قلبي! أنا AYXA Muse Pro، تكرم عينك رح نرتب يومك بكل هدوء وجمال.",
+                      "ar-AE": "مرحبا الساع يا الغالية! أنا AYXA Muse Pro، فالك طيب بيوم مرتب ومميز.",
+                      "ar-DZ": "مرحبا بيك حنونة! أنا AYXA Muse Pro، راني هنا باش نعاونك تنظمي يومك.",
+                      "ar-IQ": "هلا بيج حبيبتي الغالية! أنا AYXA Muse Pro، تدللين نرتب يومج سوة.",
+                      "fr-FR": "Bonjour ma belle ! Je suis AYXA Muse Pro, prête à organiser ta journée avec élégance.",
+                      "es-ES": "¡Hola hermosa! Soy AYXA Muse Pro, lista para organizar tu día con armonía.",
+                      "de-DE": "Hallo Liebes! Ich bin AYXA Muse Pro und helfe dir, deinen Tag wundervoll zu planen.",
+                      "tr-TR": "Merhaba tatlım! Ben AYXA Muse Pro, gününü en güzel şekilde planlamaya hazırım.",
+                      "it-IT": "Ciao splendore! Sono AYXA Muse Pro, pronta a organizzare la tua giornata.",
+                      "en-US": "Hello gorgeous! I am AYXA Muse Pro, ready to architect your most radiant day.",
+                    };
+                    const sampleText =
+                      samples[dialect] ||
+                      (isAr
+                        ? "أهلاً بكِ جميلتي! أنا AYXA Muse Pro، رفيقتكِ الذكية لتنظيم يومكِ وأهدافكِ بكل حب."
+                        : "Hello gorgeous! I am AYXA Muse Pro, your luxury life architect.");
+                    speakAiText({
+                      text: sampleText,
+                      lang: dialect === "auto" ? (isAr ? "ar" : "en") : dialect,
+                      dialect,
+                      onStart: () => setTestingVoice(true),
+                      onEnd: () => setTestingVoice(false),
+                      onError: () => setTestingVoice(false),
+                    });
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold transition-all cursor-pointer",
+                    testingVoice
+                      ? "bg-hotpink text-white shadow-rose-sm animate-pulse"
+                      : "bg-pink-500/15 text-hotpink hover:bg-pink-500/25"
+                  )}
+                >
+                  <Volume2 size={11} />
+                  <span>
+                    {testingVoice
+                      ? isAr
+                        ? "إيقاف الصوت"
+                        : "Stop Voice"
+                      : isAr
+                        ? "تجربة الصوت الآن 🔊"
+                        : "Test Voice 🔊"}
+                  </span>
+                </button>
+              </div>
+
+              <select
+                value={dialect}
+                onChange={(e) => setDialect(e.target.value)}
+                className="w-full rounded-xl border border-pink-300/70 dark:border-pink-800/60 bg-canvas px-3 py-2 text-xs font-bold text-ink focus:border-hotpink focus:outline-none cursor-pointer"
+              >
+                {AI_DIALECT_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.flag} {isAr ? opt.labelAr : opt.labelEn}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Generation Depth Tiers */}

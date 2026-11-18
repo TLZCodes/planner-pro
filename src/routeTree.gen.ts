@@ -47,6 +47,7 @@ import { Route as WellnessRouteImport } from './routes/wellness'
 import { Route as YearInPixelsRouteImport } from './routes/year-in-pixels'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiOverviewRouteImport } from './routes/api/overview'
+import { Route as ApiTtsRouteImport } from './routes/api/tts'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
@@ -244,6 +245,11 @@ const ApiOverviewRoute = ApiOverviewRouteImport.update({
   path: '/api/overview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTtsRoute = ApiTtsRouteImport.update({
+  id: '/api/tts',
+  path: '/api/tts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
@@ -314,6 +320,7 @@ export interface FileRoutesByFullPath {
   '/year-in-pixels': typeof YearInPixelsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/overview': typeof ApiOverviewRoute
+  '/api/tts': typeof ApiTtsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -360,6 +367,7 @@ export interface FileRoutesByTo {
   '/year-in-pixels': typeof YearInPixelsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/overview': typeof ApiOverviewRoute
+  '/api/tts': typeof ApiTtsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -407,6 +415,7 @@ export interface FileRoutesById {
   '/year-in-pixels': typeof YearInPixelsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/overview': typeof ApiOverviewRoute
+  '/api/tts': typeof ApiTtsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -455,6 +464,7 @@ export interface FileRouteTypes {
     | '/year-in-pixels'
     | '/api/chat'
     | '/api/overview'
+    | '/api/tts'
     | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -501,6 +511,7 @@ export interface FileRouteTypes {
     | '/year-in-pixels'
     | '/api/chat'
     | '/api/overview'
+    | '/api/tts'
     | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -547,6 +558,7 @@ export interface FileRouteTypes {
     | '/year-in-pixels'
     | '/api/chat'
     | '/api/overview'
+    | '/api/tts'
     | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -594,6 +606,7 @@ export interface RootRouteChildren {
   YearInPixelsRoute: typeof YearInPixelsRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiOverviewRoute: typeof ApiOverviewRoute
+  ApiTtsRoute: typeof ApiTtsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
@@ -870,6 +883,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOverviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tts': {
+      id: '/api/tts'
+      path: '/api/tts'
+      fullPath: '/api/tts'
+      preLoaderRoute: typeof ApiTtsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -954,6 +974,7 @@ const rootRouteChildren: RootRouteChildren = {
   YearInPixelsRoute: YearInPixelsRoute,
   ApiChatRoute: ApiChatRoute,
   ApiOverviewRoute: ApiOverviewRoute,
+  ApiTtsRoute: ApiTtsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,

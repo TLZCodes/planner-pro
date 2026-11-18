@@ -24,23 +24,35 @@ export type PlannerAppState = Record<string, any>;
 export type AiProposalType =
   | "task"
   | "complete_task"
+  | "delete_task"
+  | "edit_task"
   | "habit"
   | "complete_habit"
+  | "delete_habit"
   | "routine"
   | "goal"
   | "goal_step"
+  | "complete_goal"
   | "wish"
   | "study_session"
   | "book"
+  | "reading_progress"
+  | "course"
   | "hydration"
   | "mood"
   | "selfcare"
+  | "sleep"
+  | "steps"
+  | "workout"
   | "quran"
   | "prayer"
+  | "sadaqah"
+  | "good_deed"
   | "journal"
   | "barakah_note"
   | "expense"
   | "income"
+  | "savings_goal"
   | "brain_dump"
   | "trip"
   | "project";
@@ -530,23 +542,35 @@ export function validateProposal(
   const validTypes: AiProposalType[] = [
     "task",
     "complete_task",
+    "delete_task",
+    "edit_task",
     "habit",
     "complete_habit",
+    "delete_habit",
     "routine",
     "goal",
     "goal_step",
+    "complete_goal",
     "wish",
     "study_session",
     "book",
+    "reading_progress",
+    "course",
     "hydration",
     "mood",
     "selfcare",
+    "sleep",
+    "steps",
+    "workout",
     "quran",
     "prayer",
+    "sadaqah",
+    "good_deed",
     "journal",
     "barakah_note",
     "expense",
     "income",
+    "savings_goal",
     "brain_dump",
     "trip",
     "project",
@@ -569,21 +593,26 @@ export function validateProposal(
     "business",
   ];
   const inferredDest: AiProposalDestination =
-    type === "habit" || type === "complete_habit"
+    type === "habit" || type === "complete_habit" || type === "delete_habit"
       ? "habits"
       : type === "routine"
         ? "routines"
-        : type === "goal" || type === "goal_step" || type === "wish"
+        : type === "goal" || type === "goal_step" || type === "complete_goal" || type === "wish"
           ? "goals"
-          : type === "study_session" || type === "book"
+          : type === "study_session" || type === "book" || type === "reading_progress" || type === "course"
             ? "learning"
-            : type === "hydration" || type === "mood" || type === "selfcare"
+            : type === "hydration" ||
+                type === "mood" ||
+                type === "selfcare" ||
+                type === "sleep" ||
+                type === "steps" ||
+                type === "workout"
               ? "wellness"
-              : type === "quran" || type === "prayer"
+              : type === "quran" || type === "prayer" || type === "sadaqah" || type === "good_deed"
                 ? "deen"
                 : type === "journal" || type === "barakah_note"
                   ? "journal"
-                  : type === "expense" || type === "income"
+                  : type === "expense" || type === "income" || type === "savings_goal"
                     ? "finance"
                     : type === "brain_dump"
                       ? "inbox"
@@ -1069,6 +1098,37 @@ export interface MutationResult {
 }
 
 /**
+ * Helper to resolve a target record ID either by exact ID match or fuzzy title match
+ */
+function resolveTargetIdByFuzzyTitle(
+  items: Array<{ id: string; title?: string; name?: string }> | undefined,
+  targetId?: string,
+  proposalTitle?: string,
+): string | undefined {
+  if (!Array.isArray(items) || items.length === 0) return targetId;
+  if (targetId && items.some((it) => it.id === targetId)) {
+    return targetId;
+  }
+  const cleanSearch = (proposalTitle || targetId || "")
+    .replace(/^(complete|delete|remove|edit|update|check-in|check|finish|إكمال|حذف|تعديل|مسح|إنهاء)[:\s-]*/i, "")
+    .trim()
+    .toLowerCase();
+  if (!cleanSearch) return targetId;
+
+  const exact = items.find((it) => {
+    const label = (it.title || it.name || "").trim().toLowerCase();
+    return label === cleanSearch;
+  });
+  if (exact) return exact.id;
+
+  const partial = items.find((it) => {
+    const label = (it.title || it.name || "").trim().toLowerCase();
+    return label && (label.includes(cleanSearch) || cleanSearch.includes(label));
+  });
+  return partial ? partial.id : targetId;
+}
+
+/**
  * Applies a confirmed proposal to the canonical store without awarding XP.
  * Guarantees idempotency via proposal ID checks.
  */
@@ -1077,28 +1137,42 @@ export function applyProposalToStore(
   actions: {
     addTask: (t: any) => void;
     toggleTask?: (id: string) => void;
+    removeTask?: (id: string) => void;
+    editTask?: (id: string, updates: any) => void;
     addHabit?: (h: any) => void;
     toggleHabit?: (id: string, date?: string) => void;
+    removeHabit?: (id: string) => void;
     addRoutineStep?: (key: string, step: any) => void;
     createUserRoutine?: (routine: any) => string;
     addGoalMilestone?: (goalId: string, milestone: any) => void;
     addGoal?: (g: any) => string;
+    completeGoal?: (goalId: string) => void;
+    updateGoalProgress?: (goalId: string, progress: number) => void;
     addSomedayWish?: (w: any) => string;
     addLearningPlanItem?: (plan: any) => string;
+    addLearningItem?: (item: any) => string;
     addStudyMinutes?: (subject: string, mins: number) => void;
     addBook?: (b: any) => string;
+    logReadingProgress?: (bookId: string, pages: number, notes?: string) => void;
     addHydration?: (ml: number, date?: string) => void;
     setDailyMood?: (date: string, mood: any, energy?: any) => void;
     addCareActivity?: (act: any) => string;
+    logSleepRecord?: (rec: any) => void;
+    logStepRecord?: (rec: any) => void;
+    logWorkout?: (w: any) => void;
     logQuranProgress?: (date: string, amount: number, unit?: string) => void;
     togglePrayerLog?: (date: string, prayerKey: string, note?: string) => void;
+    addSadaqahEntry?: (entry: any) => void;
+    addCustomGoodDeed?: (date: string, title: string, category?: string) => void;
     addJournal?: (j: any) => string;
     addMoney?: (m: any) => void;
+    addSavingsGoal?: (g: any) => void;
     addBrainDumpItem?: (b: any) => string;
     addBucketListItem?: (t: any) => string;
     addBusinessProject?: (p: any) => string;
   },
   appliedRecordIds: Set<string>,
+  state?: PlannerAppState,
 ): MutationResult {
   if (appliedRecordIds.has(proposal.id)) {
     return {
@@ -1114,14 +1188,45 @@ export function applyProposalToStore(
   try {
     switch (proposal.destination) {
       case "tasks": {
-        if (proposal.type === "complete_task" && proposal.targetId && actions.toggleTask) {
-          actions.toggleTask(proposal.targetId);
+        const resolvedTaskId = resolveTargetIdByFuzzyTitle(
+          state?.tasks,
+          proposal.targetId,
+          proposal.title,
+        );
+        if (proposal.type === "complete_task" && resolvedTaskId && actions.toggleTask) {
+          actions.toggleTask(resolvedTaskId);
           appliedRecordIds.add(proposal.id);
           return {
             proposalId: proposal.id,
             success: true,
             destination: "tasks",
-            recordId: proposal.targetId,
+            recordId: resolvedTaskId,
+          };
+        }
+        if (proposal.type === "delete_task" && resolvedTaskId && actions.removeTask) {
+          actions.removeTask(resolvedTaskId);
+          appliedRecordIds.add(proposal.id);
+          return {
+            proposalId: proposal.id,
+            success: true,
+            destination: "tasks",
+            recordId: resolvedTaskId,
+          };
+        }
+        if (proposal.type === "edit_task" && resolvedTaskId && actions.editTask) {
+          actions.editTask(resolvedTaskId, {
+            title: proposal.title,
+            ...(proposal.targetDate ? { dueDate: proposal.targetDate } : {}),
+            ...(proposal.clockTime ? { optionalTime: proposal.clockTime } : {}),
+            ...(proposal.category || proposal.tag ? { tag: proposal.category || proposal.tag } : {}),
+            ...(proposal.notes ? { notes: proposal.notes } : {}),
+          });
+          appliedRecordIds.add(proposal.id);
+          return {
+            proposalId: proposal.id,
+            success: true,
+            destination: "tasks",
+            recordId: resolvedTaskId,
           };
         }
         const taskId = `task_ai_${proposal.id}`;
@@ -1146,14 +1251,29 @@ export function applyProposalToStore(
       }
 
       case "habits": {
-        if (proposal.type === "complete_habit" && proposal.targetId && actions.toggleHabit) {
-          actions.toggleHabit(proposal.targetId, today);
+        const resolvedHabitId = resolveTargetIdByFuzzyTitle(
+          state?.habits,
+          proposal.targetId,
+          proposal.title,
+        );
+        if (proposal.type === "complete_habit" && resolvedHabitId && actions.toggleHabit) {
+          actions.toggleHabit(resolvedHabitId, today);
           appliedRecordIds.add(proposal.id);
           return {
             proposalId: proposal.id,
             success: true,
             destination: "habits",
-            recordId: proposal.targetId,
+            recordId: resolvedHabitId,
+          };
+        }
+        if (proposal.type === "delete_habit" && resolvedHabitId && actions.removeHabit) {
+          actions.removeHabit(resolvedHabitId);
+          appliedRecordIds.add(proposal.id);
+          return {
+            proposalId: proposal.id,
+            success: true,
+            destination: "habits",
+            recordId: resolvedHabitId,
           };
         }
         if (actions.addHabit) {
@@ -1226,6 +1346,21 @@ export function applyProposalToStore(
       }
 
       case "goals": {
+        const resolvedGoalId = resolveTargetIdByFuzzyTitle(
+          state?.goals,
+          proposal.goalId || proposal.targetId,
+          proposal.title,
+        );
+        if (proposal.type === "complete_goal" && resolvedGoalId && actions.completeGoal) {
+          actions.completeGoal(resolvedGoalId);
+          appliedRecordIds.add(proposal.id);
+          return {
+            proposalId: proposal.id,
+            success: true,
+            destination: "goals",
+            recordId: resolvedGoalId,
+          };
+        }
         if (proposal.type === "wish" && actions.addSomedayWish) {
           const wishId = actions.addSomedayWish({
             title: proposal.title,
@@ -1240,9 +1375,9 @@ export function applyProposalToStore(
             recordId: wishId,
           };
         }
-        if (proposal.goalId && actions.addGoalMilestone) {
+        if (resolvedGoalId && proposal.type === "goal_step" && actions.addGoalMilestone) {
           const milestoneId = `ms_ai_${proposal.id}`;
-          actions.addGoalMilestone(proposal.goalId, {
+          actions.addGoalMilestone(resolvedGoalId, {
             id: milestoneId,
             title: proposal.title,
             targetDate: proposal.targetDate,
@@ -1280,6 +1415,41 @@ export function applyProposalToStore(
       }
 
       case "learning": {
+        if (proposal.type === "reading_progress" && actions.logReadingProgress) {
+          const resolvedBookId = resolveTargetIdByFuzzyTitle(
+            state?.books,
+            proposal.targetId,
+            proposal.title,
+          );
+          if (resolvedBookId) {
+            actions.logReadingProgress(resolvedBookId, proposal.amount || 10, proposal.notes);
+            appliedRecordIds.add(proposal.id);
+            return {
+              proposalId: proposal.id,
+              success: true,
+              destination: "learning",
+              recordId: resolvedBookId,
+            };
+          }
+        }
+        if (proposal.type === "course" && actions.addLearningItem) {
+          const courseId = actions.addLearningItem({
+            title: proposal.title,
+            type: "course",
+            category: proposal.category || "Skill",
+            status: "in_progress",
+            progress: 0,
+            totalUnits: proposal.amount || 10,
+            completedUnits: 0,
+          });
+          appliedRecordIds.add(proposal.id);
+          return {
+            proposalId: proposal.id,
+            success: true,
+            destination: "learning",
+            recordId: courseId,
+          };
+        }
         if (proposal.type === "book" && actions.addBook) {
           const bookId = actions.addBook({
             title: proposal.title,
@@ -1347,6 +1517,50 @@ export function applyProposalToStore(
             recordId: `mood_${proposal.id}`,
           };
         }
+        if (proposal.type === "sleep" && actions.logSleepRecord) {
+          actions.logSleepRecord({
+            date: today,
+            durationHours: proposal.amount || 8,
+            quality: 4,
+            notes: proposal.notes || proposal.title,
+          });
+          appliedRecordIds.add(proposal.id);
+          return {
+            proposalId: proposal.id,
+            success: true,
+            destination: "wellness",
+            recordId: `sleep_${proposal.id}`,
+          };
+        }
+        if (proposal.type === "steps" && actions.logStepRecord) {
+          actions.logStepRecord({
+            date: today,
+            steps: proposal.amount || 6000,
+          });
+          appliedRecordIds.add(proposal.id);
+          return {
+            proposalId: proposal.id,
+            success: true,
+            destination: "wellness",
+            recordId: `steps_${proposal.id}`,
+          };
+        }
+        if (proposal.type === "workout" && actions.logWorkout) {
+          actions.logWorkout({
+            date: today,
+            type: proposal.category || "Pilates & Stretch",
+            durationMinutes: proposal.durationMinutes || proposal.amount || 30,
+            intensity: "moderate",
+            notes: proposal.title,
+          });
+          appliedRecordIds.add(proposal.id);
+          return {
+            proposalId: proposal.id,
+            success: true,
+            destination: "wellness",
+            recordId: `workout_${proposal.id}`,
+          };
+        }
         if (actions.addCareActivity) {
           const careId = actions.addCareActivity({
             title: proposal.title,
@@ -1389,6 +1603,31 @@ export function applyProposalToStore(
             recordId: `prayer_${proposal.id}`,
           };
         }
+        if (proposal.type === "sadaqah" && actions.addSadaqahEntry) {
+          actions.addSadaqahEntry({
+            date: today,
+            type: "monetary",
+            amount: proposal.amount || 10,
+            note: proposal.title,
+          });
+          appliedRecordIds.add(proposal.id);
+          return {
+            proposalId: proposal.id,
+            success: true,
+            destination: "deen",
+            recordId: `sadaqah_${proposal.id}`,
+          };
+        }
+        if (proposal.type === "good_deed" && actions.addCustomGoodDeed) {
+          actions.addCustomGoodDeed(today, proposal.title, proposal.category || "Kindness");
+          appliedRecordIds.add(proposal.id);
+          return {
+            proposalId: proposal.id,
+            success: true,
+            destination: "deen",
+            recordId: `deed_${proposal.id}`,
+          };
+        }
         break;
       }
 
@@ -1414,6 +1653,22 @@ export function applyProposalToStore(
       }
 
       case "finance": {
+        if (proposal.type === "savings_goal" && actions.addSavingsGoal) {
+          actions.addSavingsGoal({
+            name: proposal.title,
+            targetAmount: proposal.amount || 1000,
+            currentAmount: 0,
+            emoji: proposal.emoji || "💎",
+            deadline: proposal.targetDate,
+          });
+          appliedRecordIds.add(proposal.id);
+          return {
+            proposalId: proposal.id,
+            success: true,
+            destination: "finance",
+            recordId: `sav_${proposal.id}`,
+          };
+        }
         if (actions.addMoney) {
           actions.addMoney({
             title: proposal.title,

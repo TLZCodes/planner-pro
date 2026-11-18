@@ -43,7 +43,7 @@ export function AiProposalCard({
     const appliedSet = new Set<string>();
     let count = 0;
     for (const p of proposals) {
-      const res = applyProposalToStore(p, appActions as any, appliedSet);
+      const res = applyProposalToStore(p, appActions as any, appliedSet, appActions.state);
       if (res.success) count++;
     }
     setAppliedCount(count);

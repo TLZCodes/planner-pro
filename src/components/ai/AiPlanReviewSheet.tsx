@@ -101,7 +101,7 @@ export function AiPlanReviewSheet({
 
     proposals.forEach((p) => {
       if (selectedIds.has(p.id)) {
-        const res = applyProposalToStore(p, appActions as any, appliedSet);
+        const res = applyProposalToStore(p, appActions as any, appliedSet, appActions.state);
         newResults[p.id] = res;
         allResultsList.push(res);
       }

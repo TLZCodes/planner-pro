@@ -2437,6 +2437,7 @@ export interface AiSettings {
   fullAppAccess?: boolean;
   autoExecuteActions?: boolean;
   autoVoiceReply?: boolean;
+  dialect?: string;
 }
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
@@ -2448,6 +2449,7 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   fullAppAccess: true,
   autoExecuteActions: true,
   autoVoiceReply: false,
+  dialect: "auto",
 };
 
 export function getStableGuestId(): string {
