@@ -911,7 +911,7 @@ function GoalsPage() {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-purple-900 dark:text-purple-200 flex items-center gap-1.5">
                   <Sparkles size={16} className="text-hotpink" />
-                  <span>{isAr ? "مساعد التخطيط الذكي AYXA AI ✨" : "AYXA AI Goal Planner ✨"}</span>
+                  <span>{isAr ? "مستشارة التخطيط الذكي AXYA Aura Pro ✨" : "AXYA Aura Pro Goal Planner ✨"}</span>
                 </span>
                 <span className="text-[10px] font-bold bg-white/70 dark:bg-black/40 px-2 py-0.5 rounded-full text-purple-700 dark:text-purple-300">
                   {isAr ? "تقسيم واقتراح خطة" : "Breakdown Plan"}

@@ -1,29 +1,35 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-export const APINEX_BASE_URL = "https://api.apinex.bond/v1";
-export const APINEX_API_KEY =
-  process.env.APINEX_API_KEY ||
-  "sk-apx5dcf105ea43ee71d97d6215d9fc1e1eddda7ba054d82f6f";
-export const APINEX_DEFAULT_MODEL = "free/deepseek-v4.1-flash";
+export const COARENA_OPENAI_BASE_URL = "https://coarena.ai/api/v1";
+export const COARENA_ANTHROPIC_BASE_URL = "https://coarena.ai/api";
+export const COARENA_MODELS_URL = "https://coarena.ai/api/v1/models";
+export const COARENA_FEEDBACK_URL = "https://coarena.ai/api/v1/feedback";
 
-export function createApinexAiProvider(apiKey: string = APINEX_API_KEY) {
+export const COARENA_API_KEY =
+  (typeof process !== "undefined" && process.env?.COARENA_API_KEY) ||
+  "coa_2a4a92f4d109fd9ea72e9e2406545c1c";
+
+export const COARENA_DEFAULT_MODEL = "gpt-6-luna";
+
+// Backward-compatible exports used by existing server routes
+export const APINEX_BASE_URL = COARENA_OPENAI_BASE_URL;
+export const APINEX_API_KEY = COARENA_API_KEY;
+export const APINEX_DEFAULT_MODEL = COARENA_DEFAULT_MODEL;
+
+export function createCoarenaAiProvider(apiKey: string = COARENA_API_KEY) {
   return createOpenAICompatible({
-    name: "apinex-deepseek",
-    baseURL: APINEX_BASE_URL,
+    name: "coarena",
+    baseURL: COARENA_OPENAI_BASE_URL,
     headers: {
       Authorization: `Bearer ${apiKey}`,
     },
   });
 }
 
-export function createLovableAiGatewayProvider(apiKey: string) {
-  return createOpenAICompatible({
-    name: "lovable-ai-gateway",
-    baseURL: "https://ai.gateway.lovable.dev/v1",
-    headers: {
-      "Lovable-API-Key": apiKey,
-      "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-    },
-  });
+export function createApinexAiProvider(apiKey: string = COARENA_API_KEY) {
+  return createCoarenaAiProvider(apiKey);
 }
 
+export function createLovableAiGatewayProvider(apiKey: string = COARENA_API_KEY) {
+  return createCoarenaAiProvider(apiKey);
+}

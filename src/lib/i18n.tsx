@@ -686,10 +686,10 @@ const dict: Record<string, { en: string; ar: string }> = {
   privacyAssurance: { en: "🔒 Your health notes and records stay private on your device.", ar: "🔒 جميع بياناتكِ الصحية وملاحظاتكِ محفوظة بخصوصية تامة على جهازكِ." },
 
   // AI Assistant Page
-  ayxaAI: { en: "AYXA AI ✨", ar: "مساعدة AYXA ✨" },
-  ayxaAISubtitle: { en: "A little help to make your next step clearer.", ar: "مساعدة بسيطة لتصبح خطوتكِ القادمة أوضح." },
+  ayxaAI: { en: "AXYA Aura Pro ✨", ar: "أيكسا أورا برو ✨" },
+  ayxaAISubtitle: { en: "Executive Pro AI companion to make your next step clearer.", ar: "مستشارتكِ الذكية الاحترافية لتصبح خطوتكِ القادمة أوضح." },
   thinking: { en: "Thinking…", ar: "جاري التفكير…" },
-  askAnything: { en: "Ask AYXA anything…", ar: "اسألي أيكسا عن أي شيء…" },
+  askAnything: { en: "Ask AXYA Aura Pro anything…", ar: "اسألي أيكسا أورا برو عن أي شيء…" },
   bismillahHelp: { en: "Bismillah — how can I help? 🤲", ar: "بسم الله — كيف أستطيع مساعدتكِ؟ 🤲" },
   askDayGoals: { en: "Ask about your day, your goals, your journal or your deen.", ar: "اسألي عن يومكِ، أهدافكِ، مفكرتكِ أو دينكِ." },
   builtInTemplatesTitle: { en: "Built-in Templates (Deterministic)", ar: "قوالب التخطيط المدمجة (الجاهزة)" },

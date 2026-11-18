@@ -1,18 +1,14 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import ReactMarkdown from "react-markdown";
 import {
   SendHorizontal,
-  Trash2,
   Sparkles,
   Check,
   Copy,
   Plus,
   ArrowLeft,
   Shield,
-  ShieldAlert,
   MessageSquare,
   Square,
   RefreshCw,
@@ -20,9 +16,10 @@ import {
   ChevronDown,
   ChevronUp,
   Bookmark,
-  Calendar,
-  Clock,
-  Info,
+  Coins,
+  Sliders,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { MobileShell } from "@/components/MobileShell";
 import { useLang } from "@/lib/i18n";
@@ -30,7 +27,7 @@ import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
   type AiProposal,
-  type AiConversation,
+  type AiMessage,
   type ContextPermissionScope,
   DEFAULT_CONTEXT_SCOPE,
   STARTER_PROMPTS,
@@ -39,24 +36,27 @@ import {
   formatPlanTextWithoutRawJson,
   buildUserContextSummary,
   type BuiltInTemplate,
-  type MutationResult,
 } from "@/lib/aiPlannerEngine";
+import {
+  COARENA_DEFAULT_MODEL,
+  streamCoarenaChat,
+  submitCoarenaFeedback,
+} from "@/lib/coarenaClient";
 import { AiContextModal } from "@/components/ai/AiContextModal";
 import { AiPlanReviewSheet } from "@/components/ai/AiPlanReviewSheet";
 import { AiConversationsDrawer } from "@/components/ai/AiConversationsDrawer";
 import { AiProposalCard } from "@/components/ai/AiProposalCard";
 import { AiCreditsModal } from "@/components/ai/AiCreditsModal";
 import { AiSettingsModal } from "@/components/ai/AiSettingsModal";
-import { Coins, UserCheck, Sliders } from "lucide-react";
 
 export const Route = createFileRoute("/ai")({
   head: () => ({
     meta: [
-      { title: "AYXA AI ✨ — Smart Planning Assistant" },
+      { title: "AXYA Aura Pro ✨ — Executive AI Planning Companion" },
       {
         name: "description",
         content:
-          "AYXA AI planning assistant for Muslim women — gentle day planning, night shift schedules, goal breakdown, and study routines.",
+          "AXYA Aura Pro — Executive AI planning assistant for Muslim women and ambitious planners: gentle day planning, night shift schedules, goal breakdown, and study routines.",
       },
     ],
   }),
@@ -97,15 +97,25 @@ function AiScreen() {
       : `conv_${Date.now()}`;
   });
 
+  const [messages, setMessages] = useState<AiMessage[]>(() => {
+    const saved = (state.aiConversations || []).find((c) => c.id === activeConvId);
+    return saved?.messages || [];
+  });
+
   const [input, setInput] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const [lastSubmittedText, setLastSubmittedText] = useState("");
   const [customError, setCustomError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [ratingToastId, setRatingToastId] = useState<string | null>(null);
   const [showContextModal, setShowContextModal] = useState(false);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
   const [templatesExpanded, setTemplatesExpanded] = useState(false);
+
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
   // Review Sheet State
   const [reviewSheetConfig, setReviewSheetConfig] = useState<{
@@ -144,101 +154,66 @@ function AiScreen() {
     return buildUserContextSummary(state, contextScope).summaryText;
   }, [state, contextScope]);
 
-  // Chat transport
-  const chatTransport = useMemo(() => {
-    const body: Record<string, any> = {
-      persona: state.aiPersona || "feminine",
-      aiSettings: state.aiSettings,
-    };
-    if (contextSummaryText) {
-      body.contextSummary = contextSummaryText;
-    }
-    return new DefaultChatTransport({
-      api: "/api/chat",
-      body,
-    });
-  }, [contextSummaryText, state.aiPersona, state.aiSettings]);
-
-  // Vercel AI SDK useChat
-  const { messages, sendMessage, status, stop, setMessages } = useChat({
-    transport: chatTransport,
-    onError: (err: Error) => {
-      const msg = err.message || "";
-      // Preserve user message on error
-      if (lastSubmittedText && !input) {
-        setInput(lastSubmittedText);
-      }
-
-      if (msg.includes("429")) {
-        setCustomError(
-          isAr
-            ? "طلبات متتالية — يرجى الانتظار لحظات بسيطة والمحاولة مجدداً."
-            : "Too many requests — please wait a moment and try again.",
-        );
-      } else {
-        setCustomError(
-          isAr
-            ? "تعذر الاتصال بالمساعد الذكي حالياً — يرجى التحقق من اتصالك بالإنترنت والمحاولة مجدداً."
-            : "Unable to reach your AI assistant right now — please check your internet connection and try again.",
-        );
-      }
-    },
-  });
-
-  const isGenerating = status === "submitted" || status === "streaming";
-
-  // Sync loaded conversation messages on mount or when active conversation changes
+  // Sync loaded conversation messages when activeConvId changes
   useEffect(() => {
     const saved = (state.aiConversations || []).find((c) => c.id === activeConvId);
-    if (saved && saved.messages && saved.messages.length > 0) {
-      const formattedForChat = saved.messages.map((m) => ({
-        id: m.id,
-        role: m.role as "user" | "assistant",
-        parts: [{ type: "text" as const, text: m.content }],
-      }));
-      setMessages(formattedForChat as any);
+    if (saved && saved.messages) {
+      setMessages(saved.messages);
+    } else {
+      setMessages([]);
     }
   }, [activeConvId]);
 
   // Auto-persist conversation messages to store when updated
   useEffect(() => {
     if (messages.length > 0 && !isGenerating) {
-      const convertedMessages = messages.map((m) => {
-        const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
-        const proposals = m.role === "assistant" ? extractProposalsFromText(text, state) : [];
+      const enrichedMessages: AiMessage[] = messages.map((m) => {
+        const proposals =
+          m.role === "assistant" ? extractProposalsFromText(m.content, state) : [];
         return {
-          id: m.id,
-          role: m.role as "user" | "assistant",
-          content: text,
-          createdAt: new Date().toISOString(),
-          proposals: proposals.length > 0 ? proposals : undefined,
-          status: "complete" as const,
+          ...m,
+          proposals: proposals.length > 0 ? proposals : m.proposals,
+          status: m.status || ("complete" as const),
         };
       });
 
-      // Derive title from first user message if default
-      const firstUserMsg = convertedMessages.find((m) => m.role === "user");
+      const firstUserMsg = enrichedMessages.find((m) => m.role === "user");
       const derivedTitle = firstUserMsg
         ? firstUserMsg.content.slice(0, 32)
         : isAr
-          ? "محادثة تخطيط"
-          : "Planning Chat";
+          ? "محادثة AXYA Pro"
+          : "AXYA Pro Session";
 
       saveAiConversation({
         id: activeConvId,
         title: derivedTitle,
-        messages: convertedMessages,
+        messages: enrichedMessages,
         updatedAt: new Date().toISOString(),
       });
     }
   }, [messages, isGenerating, activeConvId]);
 
-  // Handle Send with debounce and rapid-tap protection + credits verification
-  const handleSend = (text: string) => {
+  // Scroll to bottom when messages update
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [messages, isGenerating]);
+
+  // Stop active generation
+  const stopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsGenerating(false);
+  };
+
+  // Handle Send with Coarena streaming + credits verification
+  const handleSend = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isGenerating) return;
 
-    // Calculate credit cost based on user-chosen level (deep = 2, saver/balanced = 1)
     const cost = state.aiSettings?.level === "deep" ? 2 : 1;
     const currentCredits = typeof state.aiCredits === "number" ? state.aiCredits : 50;
     if (currentCredits < cost) {
@@ -256,17 +231,131 @@ function AiScreen() {
     setLastSubmittedText(trimmed);
     setInput("");
 
-    // Reset single_request context scope after sending if mode was single_request
     if (contextScope.granted && contextScope.mode === "single_request") {
       updateAiContextConsent({ granted: false });
     }
 
-    void sendMessage({ text: trimmed });
+    const userMsg: AiMessage = {
+      id: `msg_u_${Date.now()}`,
+      role: "user",
+      content: trimmed,
+      createdAt: new Date().toISOString(),
+      status: "complete",
+    };
+
+    const assistantMsgId = `msg_a_${Date.now() + 1}`;
+    const initialAssistantMsg: AiMessage = {
+      id: assistantMsgId,
+      role: "assistant",
+      content: "",
+      createdAt: new Date().toISOString(),
+      status: "incomplete",
+    };
+
+    const updatedHistory = [...messages, userMsg];
+    setMessages([...updatedHistory, initialAssistantMsg]);
+    setIsGenerating(true);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    try {
+      const result = await streamCoarenaChat({
+        messages: updatedHistory.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+        persona: state.aiPersona || "feminine",
+        level: state.aiSettings?.level || "balanced",
+        tone: state.aiSettings?.tone || "barakah",
+        model: state.aiSettings?.model || COARENA_DEFAULT_MODEL,
+        contextSummary: contextSummaryText,
+        signal: controller.signal,
+        onUpdate: (partialText, reqId) => {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsgId
+                ? {
+                    ...m,
+                    content: partialText,
+                    requestId: reqId || m.requestId,
+                  }
+                : m
+            )
+          );
+        },
+      });
+
+      const finalProposals = extractProposalsFromText(result.fullText, state);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantMsgId
+            ? {
+                ...m,
+                content: result.fullText,
+                requestId: result.requestId || m.requestId,
+                proposals: finalProposals.length > 0 ? finalProposals : undefined,
+                status: "complete",
+              }
+            : m
+        )
+      );
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsgId ? { ...m, status: "complete" } : m
+          )
+        );
+      } else {
+        const msg = err?.message || "";
+        // Remove empty placeholder on error
+        setMessages((prev) =>
+          prev.filter((m) => !(m.id === assistantMsgId && !m.content.trim()))
+        );
+        if (msg.includes("429")) {
+          setCustomError(
+            isAr
+              ? "طلبات متتالية — يرجى الانتظار لحظات بسيطة والمحاولة مجدداً."
+              : "Too many requests — please wait a moment and try again.",
+          );
+        } else {
+          setCustomError(
+            isAr
+              ? "تعذر الاتصال بمحرك AXYA Aura Pro حالياً — يرجى التحقق من اتصالك بالإنترنت والمحاولة مجدداً."
+              : "Unable to reach AXYA Aura Pro right now — please check your internet connection and try again.",
+          );
+        }
+      }
+    } finally {
+      setIsGenerating(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Rate an assistant reply via POST https://coarena.ai/api/v1/feedback
+  const handleRateReply = async (message: AiMessage, rating: "good" | "bad") => {
+    const reqId = message.requestId || message.id;
+    // Optimistically update message rating
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === message.id ? { ...m, feedbackRating: rating } : m
+      )
+    );
+    setRatingToastId(message.id);
+    setTimeout(() => {
+      setRatingToastId((curr) => (curr === message.id ? null : curr));
+    }, 2200);
+
+    await submitCoarenaFeedback({
+      requestId: reqId,
+      rating,
+    });
   };
 
   // Start a new conversation
   const handleNewConversation = () => {
-    if (isGenerating) stop();
+    if (isGenerating) stopGeneration();
     const newId = `conv_${Date.now()}`;
     setActiveConvId(newId);
     setMessages([]);
@@ -276,7 +365,7 @@ function AiScreen() {
 
   // Switch conversation safely
   const handleSelectConversation = (id: string) => {
-    if (isGenerating) stop();
+    if (isGenerating) stopGeneration();
     setActiveConvId(id);
     setCustomError(null);
   };
@@ -338,20 +427,20 @@ function AiScreen() {
               <h1 className="font-display text-base font-bold text-ink leading-tight truncate">
                 {isAr
                   ? isFeminine
-                    ? "مساعدة AYXA ✨"
-                    : "مساعد AYXA ✨"
+                    ? "أيكسا أورا برو (AXYA Aura Pro ✨)"
+                    : "أيكسا برايم برو (AXYA Prime Pro ✨)"
                   : isFeminine
-                    ? "AYXA AI ✨"
-                    : "AYXA AI Assistant ✨"}
+                    ? "AXYA Aura Pro ✨"
+                    : "AXYA Prime Pro ✨"}
               </h1>
               <p className="text-[11px] font-semibold text-ink-light truncate mt-0.5">
                 {isGenerating
                   ? t("thinking")
                   : isAr
                     ? isFeminine
-                      ? "مساعدة بسيطة لتصبح خطوتكِ القادمة أوضح."
-                      : "مساعدة بسيطة لتصبح خطوتك القادمة أوضح."
-                    : "A little help to make your next step clearer."}
+                      ? "مستشارتكِ الذكية الاحترافية لتصبح خطوتكِ القادمة أوضح."
+                      : "مستشارك الذكي الاحترافي لتصبح خطوتك القادمة أوضح."
+                    : "Executive Pro AI companion to make your next step clearer."}
               </p>
             </div>
           </div>
@@ -411,7 +500,7 @@ function AiScreen() {
               onClick={() => setShowSettingsModal(true)}
               aria-label={isAr ? "إعدادات المساعد وحماية الرصيد" : "AI Settings"}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-surface/80 text-ink-light hover:text-ink transition-colors cursor-pointer"
-              title={isAr ? "إعدادات المساعد وحماية الرصيد ⚙️" : "Agent Settings ⚙️"}
+              title={isAr ? "إعدادات AXYA Aura Pro ⚙️" : "AXYA Aura Pro Settings ⚙️"}
             >
               <Sliders size={16} />
             </button>
@@ -442,7 +531,7 @@ function AiScreen() {
               )}
             >
               <span>🌸</span>
-              <span>{isAr ? "مساعدة (أيكسا)" : "Sister (Ayxa)"}</span>
+              <span>{isAr ? "أيكسا أورا برو (Aura Pro)" : "AXYA Aura Pro"}</span>
             </button>
             <button
               type="button"
@@ -455,7 +544,7 @@ function AiScreen() {
               )}
             >
               <span>🌿</span>
-              <span>{isAr ? "مساعد (أنيس)" : "Brother (Anees)"}</span>
+              <span>{isAr ? "أيكسا برايم برو (Prime Pro)" : "AXYA Prime Pro"}</span>
             </button>
           </div>
 
@@ -469,7 +558,7 @@ function AiScreen() {
           </button>
         </div>
 
-        {/* Active AI Status Pill or Offline Warning (Zero Model Names Exposing) */}
+        {/* Active AI Status Pill */}
         {isOnline && !customError && (
           <div className="mx-4 mt-2.5 rounded-2xl border border-pink-200/80 dark:border-pink-900/50 bg-gradient-to-r from-pink-50/70 via-rose-50/40 to-pink-50/70 dark:bg-card px-3.5 py-2 text-xs text-ink flex items-center justify-between shadow-2xs animate-fade-in shrink-0">
             <div className="flex items-center gap-2">
@@ -477,16 +566,18 @@ function AiScreen() {
               <span className="font-semibold text-ink text-[11px]">
                 {isAr
                   ? isFeminine
-                    ? "مساعدة AYXA الذكية جاهزة لمساعدتكِ ✨"
-                    : "مساعد AYXA الذكي جاهز لمساعدتك ✨"
-                  : "AYXA Intelligent Agent Active & Ready ✨"}
+                    ? "مستشارة AXYA Aura Pro نشطة وجاهزة لمساعدتكِ ✨"
+                    : "مستشار AXYA Prime Pro نشط وجاهز لمساعدتك ✨"
+                  : isFeminine
+                    ? "AXYA Aura Pro Engine Active & Ready ✨"
+                    : "AXYA Prime Pro Engine Active & Ready ✨"}
               </span>
             </div>
             <button
               type="button"
               onClick={() => setShowSettingsModal(true)}
               className="text-[10px] font-bold text-hotpink bg-white/90 dark:bg-card/90 px-2.5 py-0.5 rounded-full border border-pink-200/70 dark:border-pink-800/40 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-2xs flex items-center gap-1"
-              title={isAr ? "اضغط لتعديل مستوى الاستهلاك" : "Click to adjust level"}
+              title={isAr ? "اضغط لتعديل مستوى الاستهلاك أو المحرك" : "Click to adjust level or model"}
             >
               <span>
                 {state.aiSettings?.level === "saver"
@@ -520,7 +611,10 @@ function AiScreen() {
         )}
 
         {/* Scrollable Conversation Area */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        <div
+          ref={chatScrollRef}
+          className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+        >
           {/* Welcome Screen & Starter Prompts (When messages is empty) */}
           {messages.length === 0 && (
             <div className="space-y-4 py-2 animate-fade-in">
@@ -531,16 +625,18 @@ function AiScreen() {
                   <span className="text-2xl">{isFeminine ? "🌸" : "🌿"}</span>
                   <span>✨</span>
                 </div>
-                <p className="font-script text-2xl text-hotpink leading-snug tracking-wide">{t("bismillahHelp")}</p>
+                <p className="font-script text-2xl text-hotpink leading-snug tracking-wide">
+                  {t("bismillahHelp")}
+                </p>
                 <p className="mt-1 text-[12px] font-medium text-ink-light max-w-sm mx-auto leading-relaxed">
                   {isAr
                     ? isFeminine
-                      ? "مساعدتكِ الذكية لتنظيم يومكِ بعقلية البركة، تيسير الخطوات القادمة، واقتراح روتين متوازن يجمع بين الطمأنينة والإنجاز ♡"
-                      : "مساعدك الذكي لتنظيم يومك بعقلية البركة، تيسير الخطوات القادمة، واقتراح روتين متوازن يجمع بين الطمأنينة والإنجاز ♡"
-                    : "Your gentle AI companion to clarify your next step with calm structure, mindful routines, and Barakah ♡"}
+                      ? "مرحباً بكِ في AXYA Aura Pro — مستشارتكِ الذكية الاحترافية لتنظيم يومكِ بعقلية البركة، تيسير الخطوات القادمة، وبناء روتين متوازن يجمع بين الطمأنينة والإنجاز ♡"
+                      : "مرحباً بك في AXYA Prime Pro — مستشارك الذكي الاحترافي لتنظيم يومك بعقلية البركة، تيسير الخطوات القادمة، وبناء روتين متوازن يجمع بين الطمأنينة والإنجاز ♡"
+                    : "Welcome to AXYA Aura Pro — your executive AI companion to clarify your next step with calm structure, mindful routines, and Barakah ♡"}
                 </p>
 
-                <div className="mt-3 flex items-center justify-center gap-2 text-[10px] font-bold">
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[10px] font-bold">
                   <span className="bg-white/85 dark:bg-card/85 px-3 py-1 rounded-full border border-pink-200/70 dark:border-pink-800/50 shadow-2xs text-amber-700 dark:text-amber-300">
                     🪙 {state.aiCredits ?? 50} {isAr ? "نقطة رصيد" : "credits"}
                   </span>
@@ -549,12 +645,23 @@ function AiScreen() {
                     onClick={() => setShowSettingsModal(true)}
                     className="bg-white/85 dark:bg-card/85 px-3 py-1 rounded-full border border-pink-200/70 dark:border-pink-800/50 shadow-2xs hover:text-hotpink transition-colors cursor-pointer"
                   >
-                    ⚙️ {state.aiSettings?.level === "saver" ? (isAr ? "نظام اقتصادي" : "Saver") : state.aiSettings?.level === "deep" ? (isAr ? "نظام مفصل" : "Pro Deep") : (isAr ? "نظام متوازن" : "Balanced")}
+                    ⚙️{" "}
+                    {state.aiSettings?.level === "saver"
+                      ? isAr
+                        ? "نظام اقتصادي"
+                        : "Saver"
+                      : state.aiSettings?.level === "deep"
+                        ? isAr
+                          ? "نظام مفصل"
+                          : "Pro Deep"
+                        : isAr
+                          ? "نظام متوازن"
+                          : "Balanced"}
                   </button>
                 </div>
               </div>
 
-              {/* Starter Prompts (Clear Visible Request, No Auto-Mutation) */}
+              {/* Starter Prompts */}
               <div className="space-y-2">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-ink-light flex items-center gap-1.5">
                   <Sparkles size={12} className="text-hotpink" />
@@ -567,7 +674,7 @@ function AiScreen() {
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => handleSend(promptText)}
+                        onClick={() => void handleSend(promptText)}
                         className="flex items-center justify-between text-start p-3 rounded-2xl border border-pink-200/80 dark:border-pink-900/60 bg-card hover:border-pink-400 hover:shadow-rose transition-all cursor-pointer group"
                       >
                         <span className="text-xs font-semibold text-ink group-hover:text-hotpink transition-colors">
@@ -616,7 +723,7 @@ function AiScreen() {
                       <button
                         key={i}
                         type="button"
-                        onClick={() => handleSend(text)}
+                        onClick={() => void handleSend(text)}
                         className="text-xs font-medium px-3 py-1.5 rounded-full border border-pink-200/90 dark:border-pink-900/60 bg-surface/70 hover:bg-card hover:border-hotpink hover:text-hotpink text-ink transition-all cursor-pointer shadow-2xs"
                       >
                         {text}
@@ -676,11 +783,11 @@ function AiScreen() {
 
                           <button
                             type="button"
-                            onClick={() => handleSend(isAr ? tmpl.promptAr : tmpl.promptEn)}
+                            onClick={() => void handleSend(isAr ? tmpl.promptAr : tmpl.promptEn)}
                             className="flex items-center gap-1 rounded-full bg-ghost px-3 py-1.5 text-xs font-bold text-ink hover:bg-surface transition-colors cursor-pointer"
                           >
                             <Sparkles size={12} className="text-hotpink" />
-                            <span>{isAr ? "توسيع بالسؤال ✨" : "Ask AI ✨"}</span>
+                            <span>{isAr ? "توسيع بالسؤال ✨" : "Ask AXYA Pro ✨"}</span>
                           </button>
                         </div>
                       </div>
@@ -693,12 +800,16 @@ function AiScreen() {
 
           {/* Render Messages */}
           {messages.map((m) => {
-            const rawText = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+            const rawText = m.content;
             if (!rawText) return null;
 
             const isUser = m.role === "user";
             const displayText = formatPlanTextWithoutRawJson(rawText);
-            const proposals = !isUser ? extractProposalsFromText(rawText, state) : [];
+            const proposals = !isUser
+              ? m.proposals && m.proposals.length > 0
+                ? m.proposals
+                : extractProposalsFromText(rawText, state)
+              : [];
 
             return (
               <div
@@ -730,33 +841,73 @@ function AiScreen() {
                     />
                   )}
 
-                  {/* Assistant Message Actions (Copy & Timestamp) */}
+                  {/* Assistant Message Actions (Signature, Feedback Rating & Copy) */}
                   {!isUser && (
-                    <div className="mt-2.5 flex items-center justify-between border-t border-border/40 pt-2 text-[10px] text-ink-light">
-                      <span>
+                    <div className="mt-2.5 flex items-center justify-between border-t border-border/40 pt-2 text-[10px] text-ink-light gap-2">
+                      <span className="font-bold text-ink-light truncate">
                         {isAr
                           ? isFeminine
-                            ? "مساعدة AYXA ✨"
-                            : "مساعد AYXA ✨"
-                          : "AYXA AI Assistant ✨"}
+                            ? "أيكسا أورا برو ✨"
+                            : "أيكسا برايم برو ✨"
+                          : isFeminine
+                            ? "AXYA Aura Pro ✨"
+                            : "AXYA Prime Pro ✨"}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(m.id, displayText)}
-                        className="flex items-center gap-1 font-semibold hover:text-hotpink transition-colors cursor-pointer"
-                      >
-                        {copiedId === m.id ? (
-                          <>
-                            <Check size={12} className="text-emerald-600" />
-                            <span className="text-emerald-600">{isAr ? "تم النسخ" : "Copied"}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={12} />
-                            <span>{isAr ? "نسخ" : "Copy"}</span>
-                          </>
-                        )}
-                      </button>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {/* Coarena Reply Rating Buttons (POST /api/v1/feedback) */}
+                        <div className="flex items-center gap-1 bg-surface/80 rounded-full px-1.5 py-0.5 border border-border/60">
+                          <button
+                            type="button"
+                            onClick={() => void handleRateReply(m, "good")}
+                            title={isAr ? "رد مفيد" : "Helpful reply"}
+                            className={cn(
+                              "p-1 rounded-full transition-colors cursor-pointer",
+                              m.feedbackRating === "good"
+                                ? "text-emerald-600 bg-emerald-100/80 dark:bg-emerald-950/60"
+                                : "text-ink-light hover:text-emerald-600"
+                            )}
+                          >
+                            <ThumbsUp size={11} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleRateReply(m, "bad")}
+                            title={isAr ? "رد غير دقيق" : "Needs improvement"}
+                            className={cn(
+                              "p-1 rounded-full transition-colors cursor-pointer",
+                              m.feedbackRating === "bad"
+                                ? "text-rose-600 bg-rose-100/80 dark:bg-rose-950/60"
+                                : "text-ink-light hover:text-rose-600"
+                            )}
+                          >
+                            <ThumbsDown size={11} />
+                          </button>
+                          {ratingToastId === m.id && (
+                            <span className="text-[9px] font-bold text-emerald-600 px-1">
+                              {isAr ? "تم التقييم ✓" : "Rated ✓"}
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(m.id, displayText)}
+                          className="flex items-center gap-1 font-semibold hover:text-hotpink transition-colors cursor-pointer"
+                        >
+                          {copiedId === m.id ? (
+                            <>
+                              <Check size={12} className="text-emerald-600" />
+                              <span className="text-emerald-600">{isAr ? "تم النسخ" : "Copied"}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={12} />
+                              <span>{isAr ? "نسخ" : "Copy"}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -764,7 +915,7 @@ function AiScreen() {
             );
           })}
 
-          {/* Active Generation Indicator (Without Fake Typing when unconfigured) */}
+          {/* Active Generation Indicator */}
           {isGenerating && (
             <div className="flex gap-2.5 items-center">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-surface text-sm">
@@ -772,7 +923,11 @@ function AiScreen() {
               </span>
               <div className="flex items-center gap-1.5 rounded-full bg-card px-4 py-2.5 border border-pink-200/70 dark:border-pink-900/50 shadow-sm text-xs font-semibold text-ink-light">
                 <span className="h-2 w-2 rounded-full bg-hotpink animate-ping" />
-                <span>{isAr ? "جارٍ التفكير وصياغة الخطة..." : "Thinking & drafting plan..."}</span>
+                <span>
+                  {isAr
+                    ? "أيكسا برو تحلل وتصوغ الخطة..."
+                    : "AXYA Aura Pro is thinking & drafting..."}
+                </span>
               </div>
             </div>
           )}
@@ -784,7 +939,7 @@ function AiScreen() {
               {lastSubmittedText && (
                 <button
                   type="button"
-                  onClick={() => handleSend(lastSubmittedText)}
+                  onClick={() => void handleSend(lastSubmittedText)}
                   className="inline-flex items-center gap-1.5 rounded-full bg-danger text-white px-4 py-1.5 text-xs font-bold shadow-sm active:scale-95 transition-transform cursor-pointer"
                 >
                   <RefreshCw size={12} />
@@ -795,12 +950,12 @@ function AiScreen() {
           )}
         </div>
 
-        {/* Persistent Accessible Composer (Positioned cleanly above bottom nav) */}
+        {/* Persistent Accessible Composer */}
         <div className="border-t border-border/80 bg-card px-4 pt-3 pb-[calc(80px+env(safe-area-inset-bottom,12px))] shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSend(input);
+              void handleSend(input);
             }}
             className="flex items-center gap-2 rounded-full border-2 border-pink-200/80 dark:border-pink-900/70 bg-canvas px-4 py-1.5 focus-within:border-hotpink shadow-sm transition-all"
           >
@@ -808,7 +963,11 @@ function AiScreen() {
               value={input}
               dir={dir}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={t("askAnything")}
+              placeholder={
+                isAr
+                  ? "اسألي أيكسا أورا برو عن أي شيء..."
+                  : "Ask AXYA Aura Pro anything..."
+              }
               className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-light/70 py-1.5"
             />
 
@@ -816,7 +975,7 @@ function AiScreen() {
             {isGenerating ? (
               <button
                 type="button"
-                onClick={stop}
+                onClick={stopGeneration}
                 aria-label={isAr ? "إيقاف التوليد" : "Stop generation"}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-danger text-white shadow-sm hover:opacity-90 active:scale-90 transition-transform cursor-pointer"
               >

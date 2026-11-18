@@ -2433,6 +2433,7 @@ export interface AiSettings {
   tone: "gentle" | "action" | "barakah";
   confirmBeforeGenerating: boolean;
   lowCreditAlertThreshold: number;
+  model?: string;
 }
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
@@ -2440,6 +2441,7 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   tone: "barakah",
   confirmBeforeGenerating: false,
   lowCreditAlertThreshold: 5,
+  model: "gpt-6-luna",
 };
 
 export function getStableGuestId(): string {

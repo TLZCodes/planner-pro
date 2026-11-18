@@ -1,7 +1,12 @@
-import { useState } from "react";
-import { X, Sparkles, Shield, Zap, Sliders, Check, Coins, AlertCircle, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Sparkles, Shield, Zap, Sliders, Check, Coins, Heart, Cpu } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { useApp, type AiSettings, DEFAULT_AI_SETTINGS } from "@/lib/store";
+import {
+  COARENA_DEFAULT_MODEL,
+  FALLBACK_COARENA_MODELS,
+  fetchCoarenaModels,
+} from "@/lib/coarenaClient";
 import { cn } from "@/lib/utils";
 
 interface AiSettingsModalProps {
@@ -18,6 +23,10 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
 
   const [level, setLevel] = useState<AiSettings["level"]>(currentSettings.level);
   const [tone, setTone] = useState<AiSettings["tone"]>(currentSettings.tone);
+  const [selectedModel, setSelectedModel] = useState<string>(
+    currentSettings.model || COARENA_DEFAULT_MODEL
+  );
+  const [availableModels, setAvailableModels] = useState<string[]>(FALLBACK_COARENA_MODELS);
   const [confirmBefore, setConfirmBefore] = useState<boolean>(
     Boolean(currentSettings.confirmBeforeGenerating)
   );
@@ -26,12 +35,23 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
   );
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      void fetchCoarenaModels().then((models) => {
+        if (models && models.length > 0) {
+          setAvailableModels(models);
+        }
+      });
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSave = () => {
     updateAiSettings({
       level,
       tone,
+      model: selectedModel || COARENA_DEFAULT_MODEL,
       confirmBeforeGenerating: confirmBefore,
       lowCreditAlertThreshold: lowCreditThreshold,
     });
@@ -53,10 +73,10 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
             </span>
             <div>
               <h3 className="font-display text-base font-bold text-ink">
-                {isAr ? "إعدادات المساعد الذكي وحماية الرصيد ✨" : "AI Agent & Credit Settings ✨"}
+                {isAr ? "إعدادات AXYA Aura Pro ✨" : "AXYA Aura Pro Settings ✨"}
               </h3>
               <p className="text-[11px] font-semibold text-ink-light">
-                {isAr ? "تحكم في مستوى الاستهلاك وأسلوب المساعد" : "Control response depth & credit safety"}
+                {isAr ? "تحكم في محرك الذكاء الاصطناعي وأسلوب التخطيط" : "Configure AI engine, depth & credit safety"}
               </p>
             </div>
           </div>
@@ -93,7 +113,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
           <div className="space-y-2">
             <label className="text-xs font-bold text-ink flex items-center gap-1.5">
               <Heart size={14} className="text-hotpink" />
-              <span>{isAr ? "شخصية وهوية المساعد:" : "Agent Identity:"}</span>
+              <span>{isAr ? "شخصية وهوية المساعد الاحترافي:" : "Pro Agent Identity:"}</span>
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -113,10 +133,10 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                   )}
                 </div>
                 <p className="text-xs font-bold text-ink mt-1">
-                  {isAr ? "مساعدة (أيكسا)" : "Sister (Ayxa)"}
+                  {isAr ? "أيكسا أورا برو (AXYA Aura Pro)" : "AXYA Aura Pro ✨"}
                 </p>
                 <p className="text-[10px] text-ink-light mt-0.5">
-                  {isAr ? "صيغة تأنيث أخوية وهادئة" : "Sisterly & calm tone"}
+                  {isAr ? "مستشارة تنفيذية بصيغة أنثوية هادئة" : "Sisterly executive planner"}
                 </p>
               </button>
 
@@ -137,13 +157,39 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                   )}
                 </div>
                 <p className="text-xs font-bold text-ink mt-1">
-                  {isAr ? "مساعد (أنيس)" : "Brother (Anees)"}
+                  {isAr ? "أيكسا برايم برو (AXYA Prime Pro)" : "AXYA Prime Pro ✨"}
                 </p>
                 <p className="text-[10px] text-ink-light mt-0.5">
-                  {isAr ? "صيغة عملية ومنضبطة" : "Practical & focused tone"}
+                  {isAr ? "مستشار تنفيذي بصيغة عملية ومنضبطة" : "Focused executive coach"}
                 </p>
               </button>
             </div>
+          </div>
+
+          {/* Coarena AI Model Selector */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-ink flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Cpu size={14} className="text-hotpink" />
+                <span>{isAr ? "محرك الذكاء الاصطناعي (Coarena Pro API):" : "AI Model Engine (Coarena API):"}</span>
+              </span>
+              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                {selectedModel}
+              </span>
+            </label>
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className="w-full rounded-2xl border border-pink-200/80 dark:border-pink-900/60 bg-surface px-3.5 py-2.5 text-xs font-bold text-ink outline-none focus:border-hotpink transition-colors cursor-pointer"
+            >
+              {availableModels.map((modelId) => (
+                <option key={modelId} value={modelId}>
+                  {modelId === "gpt-6-luna"
+                    ? `✨ ${modelId} (AXYA Pro Default)`
+                    : modelId}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Generation Level & Credit Consumption (Level 1 / 2 / 3) */}

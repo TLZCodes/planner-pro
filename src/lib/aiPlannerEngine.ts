@@ -57,6 +57,8 @@ export interface AiMessage {
   status?: "complete" | "incomplete" | "error";
   incompleteReason?: string;
   appliedProposalIds?: string[];
+  requestId?: string;
+  feedbackRating?: "good" | "bad";
 }
 
 export interface AiConversation {
@@ -1017,6 +1019,8 @@ export function normalizeAiConversation(raw: any): AiConversation {
         status: ["complete", "incomplete", "error"].includes(m.status) ? m.status : "complete",
         incompleteReason: typeof m.incompleteReason === "string" ? m.incompleteReason : undefined,
         appliedProposalIds: Array.isArray(m.appliedProposalIds) ? m.appliedProposalIds : [],
+        requestId: typeof m.requestId === "string" ? m.requestId : undefined,
+        feedbackRating: m.feedbackRating === "good" || m.feedbackRating === "bad" ? m.feedbackRating : undefined,
       }))
     : [];
 

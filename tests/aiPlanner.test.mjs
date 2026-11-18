@@ -14,6 +14,13 @@ import {
   BUILT_IN_TEMPLATES,
   STARTER_PROMPTS,
 } from "../src/lib/aiPlannerEngine.ts";
+import {
+  COARENA_OPENAI_BASE_URL,
+  COARENA_ANTHROPIC_BASE_URL,
+  COARENA_API_KEY,
+  COARENA_DEFAULT_MODEL,
+  buildAxyaProSystemPrompt,
+} from "../src/lib/coarenaClient.ts";
 
 test("AI Planner — Default Context Scope: strictly no personal context shared by default", () => {
   assert.equal(DEFAULT_CONTEXT_SCOPE.granted, false);
@@ -383,4 +390,36 @@ test("AI Planner — Normalization & Conversation Persistence", () => {
   assert.equal(normalized.messages[1].role, "user");
   assert.equal(normalized.messages[2].proposals?.length, 1);
   assert.equal(normalized.messages[2].proposals[0].title, "Morning walk");
+});
+
+test("AI Planner — Coarena API Configuration, gpt-6-luna Default & AXYA Aura Pro Identity", () => {
+  assert.equal(COARENA_OPENAI_BASE_URL, "https://coarena.ai/api/v1");
+  assert.equal(COARENA_ANTHROPIC_BASE_URL, "https://coarena.ai/api");
+  assert.equal(COARENA_API_KEY, "coa_2a4a92f4d109fd9ea72e9e2406545c1c");
+  assert.equal(COARENA_DEFAULT_MODEL, "gpt-6-luna");
+
+  const femPrompt = buildAxyaProSystemPrompt({ persona: "feminine", level: "balanced", tone: "barakah" });
+  assert.ok(femPrompt.includes("AXYA Aura Pro"));
+  assert.ok(femPrompt.includes("أيكسا أورا برو"));
+
+  const mascPrompt = buildAxyaProSystemPrompt({ persona: "masculine", level: "deep", tone: "action" });
+  assert.ok(mascPrompt.includes("AXYA Prime Pro"));
+  assert.ok(mascPrompt.includes("أيكسا برايم برو"));
+
+  // Verify requestId and feedbackRating persist in normalizeAiConversation
+  const convWithFeedback = normalizeAiConversation({
+    id: "conv_fb",
+    title: "Rated Chat",
+    messages: [
+      {
+        id: "m_assistant",
+        role: "assistant",
+        content: "Plan ready",
+        requestId: "req_test123",
+        feedbackRating: "good",
+      },
+    ],
+  });
+  assert.equal(convWithFeedback.messages[0].requestId, "req_test123");
+  assert.equal(convWithFeedback.messages[0].feedbackRating, "good");
 });
