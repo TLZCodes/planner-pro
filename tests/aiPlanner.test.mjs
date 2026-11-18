@@ -25,6 +25,7 @@ import {
 } from "../src/lib/coarenaClient.ts";
 import {
   cleanTextForSpeech,
+  applyAyxaPhoneticPronunciation,
   detectTextLanguage,
   splitIntoSpeechChunks,
   AI_DIALECT_OPTIONS,
@@ -453,9 +454,34 @@ test("AI Planner — Coarena API Configuration, 3 Free Models Only, Omni-App Acc
   assert.equal(loggedWater, 500);
   assert.equal(createdHabit?.name, "Evening Skincare");
 
-  // Voice TTS cleaner strips JSON blocks and emojis cleanly
+  // Voice TTS cleaner strips JSON blocks and emojis cleanly & pronounces AYXA as عائشة / Aisha across all languages
   const cleanedVoice = cleanTextForSpeech("Hello **Queen** 🌸!\n```json:ayxa_plan\n{\"proposals\":[]}\n```");
   assert.equal(cleanedVoice, "Hello Queen !");
+
+  assert.equal(
+    cleanTextForSpeech("أهلاً بكِ يا جميلتي، أنا AYXA Muse Pro هنا لمساعدتكِ"),
+    "أهلاً بكِ يا جميلتي، أنا عائشة ميوز برو هنا لمساعدتكِ"
+  );
+  assert.equal(
+    cleanTextForSpeech("Bonjour ma belle, je suis AYXA pour organiser ta journée"),
+    "Bonjour ma belle, je suis Aïcha pour organiser ta journée"
+  );
+  assert.equal(
+    cleanTextForSpeech("¡Hola hermosa! Soy AYXA, vamos a organizar tu día"),
+    "¡Hola hermosa! Soy Aisha, vamos a organizar tu día"
+  );
+  assert.equal(
+    cleanTextForSpeech("Hallo Liebes, ich bin AYXA und plane deinen Tag"),
+    "Hallo Liebes, ich bin Aischa und plane deinen Tag"
+  );
+  assert.equal(
+    applyAyxaPhoneticPronunciation("Merhaba tatlım, ben AYXA", "tr-TR"),
+    "Merhaba tatlım, ben Aişe"
+  );
+  assert.equal(
+    cleanTextForSpeech("Hello gorgeous, I am AYXA Muse Pro"),
+    "Hello gorgeous, I am Aisha Muse Pro"
+  );
 
   // Verify requestId and feedbackRating persist in normalizeAiConversation
   const convWithFeedback = normalizeAiConversation({

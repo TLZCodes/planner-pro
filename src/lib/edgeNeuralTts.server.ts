@@ -347,6 +347,29 @@ function encodeWsTextFrame(text: string): Buffer {
   return Buffer.concat([header, maskKey, masked]);
 }
 
+export function applyServerAyxaPronunciation(text: string, langOrDialect: string): string {
+  if (!text) return "";
+  const baseLang = (langOrDialect || "ar").split("-")[0].toLowerCase();
+  if (baseLang === "ar") {
+    return text
+      .replace(/\b(?:AYXA|AXYA)\s+Muse\s+Pro\b/gi, "عائشة ميوز برو")
+      .replace(/\b(?:AYXA|AXYA)\s+Pro\b/gi, "عائشة برو")
+      .replace(/\b(?:AYXA|AXYA)\b/gi, "عائشة");
+  }
+  const phoneticMap: Record<string, string> = {
+    fr: "Aïcha",
+    de: "Aischa",
+    tr: "Aişe",
+    ru: "Аиша",
+    es: "Aisha",
+    it: "Aisha",
+    pt: "Aisha",
+    en: "Aisha",
+  };
+  const spokenName = phoneticMap[baseLang] || "Aisha";
+  return text.replace(/\b(?:AYXA|AXYA)\b/gi, spokenName);
+}
+
 /**
  * Synthesizes speech using Microsoft Edge Natural Feminine Neural TTS over raw TLS WebSocket.
  */
@@ -357,7 +380,10 @@ export function synthesizeEdgeNeuralTts(params: {
   rate?: string;
 }): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const cleanText = params.text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, " ").trim();
+    const cleanText = applyServerAyxaPronunciation(
+      params.text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, " ").trim(),
+      params.langOrDialect
+    );
     if (!cleanText) {
       reject(new Error("Empty text"));
       return;

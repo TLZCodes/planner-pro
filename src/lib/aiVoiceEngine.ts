@@ -154,25 +154,54 @@ export const AI_DIALECT_OPTIONS: AiDialectOption[] = [
   },
 ];
 
-export function cleanTextForSpeech(markdownText: string): string {
+/**
+ * Replaces the brand name "AYXA" (or "AXYA") in spoken TTS text ONLY (never in visual UI text)
+ * with its authentic phonetic pronunciation "عائشة" (Aisha / Aïcha / Aischa / Aişe) across all languages.
+ */
+export function applyAyxaPhoneticPronunciation(text: string, langCode?: string): string {
+  if (!text) return "";
+  const baseLang = (langCode || detectTextLanguage(text, "ar")).split("-")[0].toLowerCase();
+
+  if (baseLang === "ar") {
+    return text
+      .replace(/\b(?:AYXA|AXYA)\s+Muse\s+Pro\b/gi, "عائشة ميوز برو")
+      .replace(/\b(?:AYXA|AXYA)\s+Pro\b/gi, "عائشة برو")
+      .replace(/\b(?:AYXA|AXYA)\b/gi, "عائشة");
+  }
+
+  const phoneticMap: Record<string, string> = {
+    fr: "Aïcha",
+    de: "Aischa",
+    tr: "Aişe",
+    ru: "Аиша",
+    es: "Aisha",
+    it: "Aisha",
+    pt: "Aisha",
+    en: "Aisha",
+  };
+  const spokenName = phoneticMap[baseLang] || "Aisha";
+  return text.replace(/\b(?:AYXA|AXYA)\b/gi, spokenName);
+}
+
+export function cleanTextForSpeech(markdownText: string, langCode?: string): string {
   if (!markdownText) return "";
-  return (
-    markdownText
-      // Remove structured JSON blocks
-      .replace(/```[\s\S]*?```/g, "")
-      // Remove markdown headings, bold, italics, inline code
-      .replace(/^#{1,6}\s+/gm, "")
-      .replace(/\*\*([^*]+)\*\*/g, "$1")
-      .replace(/\*([^*]+)\*\*/g, "$1")
-      .replace(/__([^_]+)__/g, "$1")
-      .replace(/`([^`]+)`/g, "$1")
-      // Replace bullet markers with natural pause
-      .replace(/^\s*[-*•]\s+/gm, ". ")
-      // Strip decorative emojis & symbols
-      .replace(/[\u{1F1E6}-\u{1F1FF}\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}♡✨🌸👑🌙🌷🎀📋⚡🪙🔒۞]/gu, "")
-      .replace(/\s+/g, " ")
-      .trim()
-  );
+  const stripped = markdownText
+    // Remove structured JSON blocks
+    .replace(/```[\s\S]*?```/g, "")
+    // Remove markdown headings, bold, italics, inline code
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    // Replace bullet markers with natural pause
+    .replace(/^\s*[-*•]\s+/gm, ". ")
+    // Strip decorative emojis & symbols
+    .replace(/[\u{1F1E6}-\u{1F1FF}\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}♡✨🌸👑🌙🌷🎀📋⚡🪙🔒۞]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return applyAyxaPhoneticPronunciation(stripped, langCode);
 }
 
 /**

@@ -1,9 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { synthesizeEdgeNeuralTts } from "@/lib/edgeNeuralTts.server";
+import {
+  synthesizeEdgeNeuralTts,
+  applyServerAyxaPronunciation,
+} from "@/lib/edgeNeuralTts.server";
 
 async function fetchGoogleGtxFallbackMp3(text: string, baseLang: string): Promise<Buffer> {
+  const spokenText = applyServerAyxaPronunciation(text, baseLang);
   // Split into <=180 char chunks on sentence/word boundaries and concatenate MP3 buffers on the server
-  const words = text.split(/\s+/);
+  const words = spokenText.split(/\s+/);
   const chunks: string[] = [];
   let current = "";
   for (const w of words) {
