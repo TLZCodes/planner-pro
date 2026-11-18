@@ -51,6 +51,7 @@ import {
 import {
   speakAiText,
   stopAiVoice,
+  primeAiVoiceOnUserGesture,
   startVoiceRecognition,
   AI_DIALECT_OPTIONS,
   type VoiceRecognitionSession,
@@ -286,6 +287,7 @@ function AiScreen() {
     }
 
     stopAiVoice();
+    primeAiVoiceOnUserGesture();
     setSpeakingMessageId(null);
     setIsListeningMic(true);
     setVoiceCallTranscript("");
@@ -362,6 +364,9 @@ function AiScreen() {
     }
 
     stopAiVoice();
+    if (autoVoiceReply || forceSpeakReply || showVoiceCallModal) {
+      primeAiVoiceOnUserGesture();
+    }
     setSpeakingMessageId(null);
     setCustomError(null);
     setLastSubmittedText(trimmed);

@@ -360,19 +360,65 @@ export function isSpeechSynthesisSupported(): boolean {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
-let activeAudioElement: HTMLAudioElement | null = null;
+let sharedAudioElement: HTMLAudioElement | null = null;
+let activeBlobUrl: string | null = null;
 let isAudioCancelled = false;
+
+function getOrCreateSharedAudio(): HTMLAudioElement {
+  if (!sharedAudioElement && typeof window !== "undefined") {
+    sharedAudioElement = new Audio();
+    sharedAudioElement.preload = "auto";
+  }
+  return sharedAudioElement!;
+}
+
+/**
+ * Unlocks the shared HTMLAudioElement during a synchronous user click/submit gesture
+ * so auto-voice replies after streaming are never blocked by browser autoplay policies.
+ */
+export function primeAiVoiceOnUserGesture(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const audio = getOrCreateSharedAudio();
+    // Tiny silent WAV data URI to unlock the audio element on user tap
+    if (audio.paused && !audio.src) {
+      audio.src =
+        "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+      audio.volume = 0.01;
+      const p = audio.play();
+      if (p && typeof p.then === "function") {
+        p.then(() => {
+          audio.pause();
+          audio.volume = 1.0;
+        }).catch(() => {
+          audio.volume = 1.0;
+        });
+      }
+    }
+  } catch {
+    // Ignore gesture unlock errors
+  }
+}
 
 export function stopAiVoice(): void {
   isAudioCancelled = true;
-  if (activeAudioElement) {
+  if (sharedAudioElement) {
     try {
-      activeAudioElement.pause();
-      activeAudioElement.src = "";
+      sharedAudioElement.onended = null;
+      sharedAudioElement.onerror = null;
+      sharedAudioElement.pause();
+      sharedAudioElement.removeAttribute("src");
     } catch {
       // Ignore audio pause errors
     }
-    activeAudioElement = null;
+  }
+  if (activeBlobUrl && typeof URL !== "undefined") {
+    try {
+      URL.revokeObjectURL(activeBlobUrl);
+    } catch {
+      // Ignore revoke errors
+    }
+    activeBlobUrl = null;
   }
   if (isSpeechSynthesisSupported()) {
     try {
@@ -384,58 +430,87 @@ export function stopAiVoice(): void {
 }
 
 /**
- * Plays a single chunk via Cloud Neural TTS (/api/tts server proxy -> direct Google GTX fallback)
+ * Plays a paragraph chunk via our Studio-Grade Feminine Neural TTS (/api/tts)
+ * using the persistent unlocked HTMLAudioElement.
  */
-function playNeuralChunk(chunkText: string, baseLang: string): Promise<void> {
+function playNeuralChunk(
+  chunkText: string,
+  baseLang: string,
+  dialect: string,
+  isFirstChunk: boolean
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (isAudioCancelled) {
+    if (isAudioCancelled || typeof window === "undefined") {
       resolve();
       return;
     }
 
+    const audio = getOrCreateSharedAudio();
+    audio.volume = 1.0;
+
     const encodedText = encodeURIComponent(chunkText);
-    const localProxyUrl = `/api/tts?lang=${encodeURIComponent(baseLang)}&q=${encodedText}`;
-    const directGtxUrl = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=${encodeURIComponent(
+    const ttsUrl = `/api/tts?lang=${encodeURIComponent(
       baseLang
-    )}&q=${encodedText}`;
-
-    const audio = new Audio();
-    (audio as any).referrerPolicy = "no-referrer";
-    audio.crossOrigin = "anonymous";
-    activeAudioElement = audio;
-
-    let triedDirect = false;
+    )}&dialect=${encodeURIComponent(dialect || "auto")}&q=${encodedText}`;
 
     audio.onended = () => {
       resolve();
     };
 
     audio.onerror = () => {
-      if (!triedDirect && !isAudioCancelled) {
-        triedDirect = true;
-        audio.src = directGtxUrl;
-        audio.play().catch((err) => reject(err));
-      } else {
-        reject(new Error("Audio playback failed"));
-      }
+      reject(new Error("Neural audio stream error"));
     };
 
-    audio.src = localProxyUrl;
-    audio.play().catch(() => {
-      if (!triedDirect && !isAudioCancelled) {
-        triedDirect = true;
-        audio.src = directGtxUrl;
-        audio.play().catch((err) => reject(err));
-      } else {
-        reject(new Error("Audio play rejected"));
+    // For the first chunk, assign src and call play() synchronously inside the user click tick
+    if (isFirstChunk && chunkText.length <= 750) {
+      audio.src = ttsUrl;
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch((err) => reject(err));
       }
-    });
+      return;
+    }
+
+    // For subsequent or very long chunks, fetch via POST/GET blob and play on the unlocked audio element
+    fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: chunkText,
+        lang: baseLang,
+        dialect: dialect || "auto",
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("audio")) {
+          throw new Error("Invalid audio content-type");
+        }
+        const blob = await res.blob();
+        if (isAudioCancelled) {
+          resolve();
+          return;
+        }
+        if (activeBlobUrl) {
+          try {
+            URL.revokeObjectURL(activeBlobUrl);
+          } catch {
+            // Ignore
+          }
+        }
+        activeBlobUrl = URL.createObjectURL(blob);
+        audio.src = activeBlobUrl;
+        await audio.play();
+      })
+      .catch((err) => reject(err));
   });
 }
 
 /**
- * Speaks text in Arabic (any dialect) or any international language (French, Spanish, German, Turkish, Italian, English).
- * Uses Cloud Neural Audio automatically whenever the OS lacks a native feminine voice for that language (e.g. Arabic on Windows).
+ * Speaks text in Arabic (any dialect: Moroccan Darija, Saudi, Egyptian, Levantine, Emirati, Algerian, Iraqi, Fusha)
+ * or any international language (French, Spanish, German, Turkish, Italian, English)
+ * using our Studio-Grade Microsoft Edge Natural Feminine Neural Voice Engine (/api/tts).
  */
 export function speakAiText(params: {
   text: string;
@@ -456,71 +531,57 @@ export function speakAiText(params: {
 
   // Determine the actual language of the reply text
   const detectedBaseLang = detectTextLanguage(cleaned, params.lang);
+  const dialect = params.dialect || "auto";
   const preferredBcp47 =
-    params.dialect && params.dialect !== "auto" && params.dialect.startsWith(detectedBaseLang)
-      ? params.dialect
+    dialect !== "auto" && dialect.toLowerCase().startsWith(detectedBaseLang)
+      ? dialect
       : detectedBaseLang;
 
-  // Check if the OS has a real native voice for this language
-  const voices = isSpeechSynthesisSupported()
-    ? window.speechSynthesis.getVoices()
-    : [];
-  const nativeVoice = selectBestFeminineVoice(voices, preferredBcp47);
-
-  // For Arabic & non-English languages on Windows/Desktop where nativeVoice is null,
-  // or whenever Cloud Neural TTS gives superior pronunciation:
-  const shouldUseCloudNeural = !nativeVoice || detectedBaseLang !== "en";
-
-  if (shouldUseCloudNeural) {
-    const chunks = splitIntoSpeechChunks(cleaned, 165);
-    if (chunks.length === 0) {
-      params.onEnd?.();
-      return;
-    }
-
-    void (async () => {
-      try {
-        params.onStart?.();
-        for (const chunk of chunks) {
-          if (isAudioCancelled) break;
-          await playNeuralChunk(chunk, detectedBaseLang);
-        }
-        if (!isAudioCancelled) {
-          params.onEnd?.();
-        }
-      } catch {
-        // Fallback to native speechSynthesis if offline
-        if (!isAudioCancelled && isSpeechSynthesisSupported()) {
-          const utterance = new SpeechSynthesisUtterance(cleaned);
-          if (nativeVoice) {
-            utterance.voice = nativeVoice;
-            utterance.lang = nativeVoice.lang;
-          } else {
-            utterance.lang = preferredBcp47;
-          }
-          utterance.pitch = 1.05;
-          utterance.rate = 0.98;
-          utterance.onend = () => params.onEnd?.();
-          utterance.onerror = () => params.onError?.();
-          window.speechSynthesis.speak(utterance);
-        } else {
-          params.onError?.();
-        }
-      }
-    })();
+  // Split into large natural paragraphs (up to 680 chars per neural stream)
+  const chunks = splitIntoSpeechChunks(cleaned, 680);
+  if (chunks.length === 0) {
+    params.onEnd?.();
     return;
   }
 
-  // Native feminine voice playback (e.g. English with Zira/Samantha/Aria)
-  const utterance = new SpeechSynthesisUtterance(cleaned);
-  utterance.voice = nativeVoice;
-  utterance.lang = nativeVoice.lang;
-  utterance.pitch = 1.05;
-  utterance.rate = 0.98;
-  utterance.onstart = () => params.onStart?.();
-  utterance.onend = () => params.onEnd?.();
-  utterance.onerror = () => params.onError?.();
-  window.speechSynthesis.speak(utterance);
+  params.onStart?.();
+
+  // Start the first chunk synchronously on the user's click gesture
+  const firstPromise = playNeuralChunk(chunks[0], detectedBaseLang, dialect, true);
+
+  void (async () => {
+    try {
+      await firstPromise;
+      for (let i = 1; i < chunks.length; i++) {
+        if (isAudioCancelled) break;
+        await playNeuralChunk(chunks[i], detectedBaseLang, dialect, false);
+      }
+      if (!isAudioCancelled) {
+        params.onEnd?.();
+      }
+    } catch {
+      // Fallback to native speechSynthesis only if offline and a matching OS language voice exists
+      if (!isAudioCancelled && isSpeechSynthesisSupported()) {
+        const voices = window.speechSynthesis.getVoices();
+        const nativeVoice = selectBestFeminineVoice(voices, preferredBcp47);
+        if (nativeVoice) {
+          setTimeout(() => {
+            if (isAudioCancelled) return;
+            const utterance = new SpeechSynthesisUtterance(cleaned);
+            utterance.voice = nativeVoice;
+            utterance.lang = nativeVoice.lang;
+            utterance.pitch = 1.05;
+            utterance.rate = 0.98;
+            utterance.onend = () => params.onEnd?.();
+            utterance.onerror = () => params.onError?.();
+            window.speechSynthesis.speak(utterance);
+          }, 60);
+          return;
+        }
+      }
+      params.onError?.();
+    }
+  })();
 }
 
 export function isSpeechRecognitionSupported(): boolean {
