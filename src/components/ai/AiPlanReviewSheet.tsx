@@ -27,15 +27,7 @@ export function AiPlanReviewSheet({
   onProposalsApplied,
 }: AiPlanReviewSheetProps) {
   const { lang, dir } = useLang();
-  const {
-    addTask,
-    addRoutineStep,
-    createUserRoutine,
-    addGoalMilestone,
-    addGoal,
-    addLearningPlanItem,
-    addStudyMinutes,
-  } = useApp();
+  const appActions = useApp();
   const isAr = lang === "ar";
 
   const [proposals, setProposals] = useState<AiProposal[]>(() =>
@@ -107,19 +99,9 @@ export function AiPlanReviewSheet({
     const newResults: Record<string, MutationResult> = { ...appliedResults };
     const allResultsList: MutationResult[] = [];
 
-    const actions = {
-      addTask,
-      addRoutineStep,
-      createUserRoutine,
-      addGoalMilestone,
-      addGoal,
-      addLearningPlanItem,
-      addStudyMinutes,
-    };
-
     proposals.forEach((p) => {
       if (selectedIds.has(p.id)) {
-        const res = applyProposalToStore(p, actions, appliedSet);
+        const res = applyProposalToStore(p, appActions as any, appliedSet);
         newResults[p.id] = res;
         allResultsList.push(res);
       }
@@ -264,9 +246,17 @@ export function AiPlanReviewSheet({
                         className="rounded-lg border border-border bg-card px-2 py-1 text-ink font-semibold outline-none focus:border-hotpink cursor-pointer"
                       >
                         <option value="tasks">{isAr ? "📋 المهام" : "📋 Tasks"}</option>
-                        <option value="routines">{isAr ? "🌸 الروتين" : "🌸 Routines"}</option>
-                        <option value="goals">{isAr ? "🎯 الأهداف" : "🎯 Goals"}</option>
-                        <option value="learning">{isAr ? "📚 الدراسة" : "📚 Learning"}</option>
+                        <option value="habits">{isAr ? "🌸 العادات" : "🌸 Habits"}</option>
+                        <option value="routines">{isAr ? "✨ الروتين" : "✨ Routines"}</option>
+                        <option value="goals">{isAr ? "🎯 الأهداف والأمنيات" : "🎯 Goals & Wishes"}</option>
+                        <option value="learning">{isAr ? "📚 الدراسة والكتب" : "📚 Learning & Books"}</option>
+                        <option value="wellness">{isAr ? "💧 العناية والماء" : "💧 Wellness & Water"}</option>
+                        <option value="deen">{isAr ? "🕌 العبادة والقرآن" : "🕌 Deen & Quran"}</option>
+                        <option value="journal">{isAr ? "🤍 المفكرة وجرّة النِّعم" : "🤍 Journal & Barakah"}</option>
+                        <option value="finance">{isAr ? "💳 المالية" : "💳 Finance"}</option>
+                        <option value="inbox">{isAr ? "💭 صندوق الأفكار" : "💭 Brain Dump Inbox"}</option>
+                        <option value="travel">{isAr ? "✈️ السفر" : "✈️ Travel"}</option>
+                        <option value="business">{isAr ? "💼 المشاريع" : "💼 Business"}</option>
                       </select>
 
                       {/* Date */}

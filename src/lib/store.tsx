@@ -2434,6 +2434,9 @@ export interface AiSettings {
   confirmBeforeGenerating: boolean;
   lowCreditAlertThreshold: number;
   model?: string;
+  fullAppAccess?: boolean;
+  autoExecuteActions?: boolean;
+  autoVoiceReply?: boolean;
 }
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
@@ -2442,6 +2445,9 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   confirmBeforeGenerating: false,
   lowCreditAlertThreshold: 5,
   model: "gpt-6-luna",
+  fullAppAccess: true,
+  autoExecuteActions: true,
+  autoVoiceReply: false,
 };
 
 export function getStableGuestId(): string {

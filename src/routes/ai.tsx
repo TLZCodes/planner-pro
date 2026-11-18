@@ -8,7 +8,6 @@ import {
   Copy,
   Plus,
   ArrowLeft,
-  Shield,
   MessageSquare,
   Square,
   RefreshCw,
@@ -16,10 +15,16 @@ import {
   ChevronDown,
   ChevronUp,
   Bookmark,
-  Coins,
   Sliders,
   ThumbsUp,
   ThumbsDown,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  PhoneCall,
+  X,
+  Zap,
 } from "lucide-react";
 import { MobileShell } from "@/components/MobileShell";
 import { useLang } from "@/lib/i18n";
@@ -35,13 +40,20 @@ import {
   extractProposalsFromText,
   formatPlanTextWithoutRawJson,
   buildUserContextSummary,
+  buildFullAppOmniContext,
+  applyProposalToStore,
   type BuiltInTemplate,
 } from "@/lib/aiPlannerEngine";
 import {
-  COARENA_DEFAULT_MODEL,
   streamCoarenaChat,
   submitCoarenaFeedback,
 } from "@/lib/coarenaClient";
+import {
+  speakAiText,
+  stopAiVoice,
+  startVoiceRecognition,
+  type VoiceRecognitionSession,
+} from "@/lib/aiVoiceEngine";
 import { AiContextModal } from "@/components/ai/AiContextModal";
 import { AiPlanReviewSheet } from "@/components/ai/AiPlanReviewSheet";
 import { AiConversationsDrawer } from "@/components/ai/AiConversationsDrawer";
@@ -56,7 +68,7 @@ export const Route = createFileRoute("/ai")({
       {
         name: "description",
         content:
-          "AYXA Muse Pro — Luxury AI planning companion for aesthetic, mindful women: gentle day planning, That Girl routines, goal breakdown, and Barakah schedules.",
+          "AYXA Muse Pro — Luxury AI planning companion with full app management and feminine voice for aesthetic, mindful women.",
       },
     ],
   }),
@@ -74,9 +86,33 @@ const FEMININE_VIBE_MODES: Array<{
   { id: "barakah", emoji: "🌙", labelEn: "Barakah Soul", labelAr: "بركة وسكينة" },
 ];
 
+const OMNI_QUICK_ACTIONS = [
+  {
+    id: "omni_audit",
+    ar: "حلّلي حالة تطبيقي اليوم ورتّبي أولوياتي وعاداتي ✨",
+    en: "Analyze my entire app today & organize my priorities ✨",
+  },
+  {
+    id: "omni_morning",
+    ar: "أضيفي روتين صباحي أنثوي + 500 مل ماء + مهمة تركيز 🌸",
+    en: "Add a morning glow routine + log 500ml water + 1 focus task 🌸",
+  },
+  {
+    id: "omni_deen",
+    ar: "نسّقي جدول مهامي اليوم بين أوقات الصلوات الخمس + ورد القرآن 🕌",
+    en: "Schedule my tasks today around the 5 prayers + Quran pages 🕌",
+  },
+  {
+    id: "omni_selfcare",
+    ar: "أضيفي جلسة عناية ذاتية وملاحظة امتنان في جرّة النِّعم 🤍",
+    en: "Add a self-care ritual & a gratitude note to my Barakah Jar 🤍",
+  },
+];
+
 function AiScreen() {
   const navigate = useNavigate();
   const { t, lang, dir } = useLang();
+  const appStore = useApp();
   const {
     state,
     saveAiConversation,
@@ -87,13 +123,18 @@ function AiScreen() {
     revokeAiContextConsent,
     useAiCredit,
     updateAiSettings,
-  } = useApp();
+  } = appStore;
+
   const isAr = lang === "ar";
   const activeTone: AiSettings["tone"] = state.aiSettings?.tone || "barakah";
   const activeLevel: AiSettings["level"] = state.aiSettings?.level || "balanced";
+  const fullAppAccess = state.aiSettings?.fullAppAccess !== false;
+  const autoExecuteActions = state.aiSettings?.autoExecuteActions !== false;
+  const autoVoiceReply = Boolean(state.aiSettings?.autoVoiceReply);
 
   // Navigation back handler
   const handleBack = () => {
+    stopAiVoice();
     const historyIdx = typeof window !== "undefined" ? (window.history.state?.idx ?? -1) : -1;
     if (historyIdx > 0) {
       window.history.back();
@@ -126,8 +167,15 @@ function AiScreen() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [templatesExpanded, setTemplatesExpanded] = useState(false);
 
+  // AI Voice States
+  const [isListeningMic, setIsListeningMic] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+  const [showVoiceCallModal, setShowVoiceCallModal] = useState(false);
+  const [voiceCallTranscript, setVoiceCallTranscript] = useState("");
+
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const recognitionRef = useRef<VoiceRecognitionSession | null>(null);
 
   // Review Sheet State
   const [reviewSheetConfig, setReviewSheetConfig] = useState<{
@@ -154,17 +202,22 @@ function AiScreen() {
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      stopAiVoice();
+      recognitionRef.current?.stop();
     };
   }, []);
 
   // Context permissions
   const contextScope: ContextPermissionScope = state.aiContextConsent || DEFAULT_CONTEXT_SCOPE;
 
-  // Build context summary if user granted permission
+  // Build full Omni-App context summary when fullAppAccess is enabled
   const contextSummaryText = useMemo(() => {
+    if (fullAppAccess) {
+      return buildFullAppOmniContext(state);
+    }
     if (!contextScope.granted) return "";
     return buildUserContextSummary(state, contextScope).summaryText;
-  }, [state, contextScope]);
+  }, [state, fullAppAccess, contextScope]);
 
   // Sync loaded conversation messages when activeConvId changes
   useEffect(() => {
@@ -221,8 +274,73 @@ function AiScreen() {
     setIsGenerating(false);
   };
 
-  // Handle Send with Coarena streaming + credits verification
-  const handleSend = async (text: string) => {
+  // Toggle Voice Dictation (Speech-to-Text)
+  const handleToggleMic = (autoSendOnFinal = false) => {
+    if (isListeningMic) {
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
+      setIsListeningMic(false);
+      return;
+    }
+
+    stopAiVoice();
+    setSpeakingMessageId(null);
+    setIsListeningMic(true);
+    setVoiceCallTranscript("");
+
+    let latestTranscript = "";
+    const session = startVoiceRecognition({
+      lang: isAr ? "ar" : "en",
+      onTranscript: (transcript, isFinal) => {
+        latestTranscript = transcript;
+        if (showVoiceCallModal) {
+          setVoiceCallTranscript(transcript);
+        } else {
+          setInput(transcript);
+        }
+        if (isFinal && autoSendOnFinal && transcript.trim()) {
+          recognitionRef.current?.stop();
+          setIsListeningMic(false);
+          void handleSend(transcript.trim(), true);
+        }
+      },
+      onEnd: () => {
+        setIsListeningMic(false);
+        if (autoSendOnFinal && latestTranscript.trim()) {
+          const toSend = latestTranscript.trim();
+          latestTranscript = "";
+          void handleSend(toSend, true);
+        }
+      },
+      onError: () => {
+        setIsListeningMic(false);
+      },
+    });
+
+    recognitionRef.current = session;
+  };
+
+  // Toggle speaking a message out loud (Text-to-Speech)
+  const handleSpeakMessage = (msgId: string, rawContent: string) => {
+    if (speakingMessageId === msgId) {
+      stopAiVoice();
+      setSpeakingMessageId(null);
+      return;
+    }
+
+    const cleanDisplay = formatPlanTextWithoutRawJson(rawContent);
+    setSpeakingMessageId(msgId);
+    speakAiText({
+      text: cleanDisplay,
+      lang: isAr ? "ar" : "en",
+      onStart: () => setSpeakingMessageId(msgId),
+      onEnd: () => setSpeakingMessageId((curr) => (curr === msgId ? null : curr)),
+      onError: () => setSpeakingMessageId((curr) => (curr === msgId ? null : curr)),
+    });
+  };
+
+  // Handle Send with streaming + auto-pilot execution + voice reply
+  const handleSend = async (text: string, forceSpeakReply = false) => {
     const trimmed = text.trim();
     if (!trimmed || isGenerating) return;
 
@@ -239,13 +357,12 @@ function AiScreen() {
       return;
     }
 
+    stopAiVoice();
+    setSpeakingMessageId(null);
     setCustomError(null);
     setLastSubmittedText(trimmed);
     setInput("");
-
-    if (contextScope.granted && contextScope.mode === "single_request") {
-      updateAiContextConsent({ granted: false });
-    }
+    setVoiceCallTranscript("");
 
     const userMsg: AiMessage = {
       id: `msg_u_${Date.now()}`,
@@ -280,7 +397,6 @@ function AiScreen() {
         persona: "feminine",
         level: activeLevel,
         tone: activeTone,
-        model: state.aiSettings?.model || COARENA_DEFAULT_MODEL,
         contextSummary: contextSummaryText,
         signal: controller.signal,
         onUpdate: (partialText, reqId) => {
@@ -299,6 +415,19 @@ function AiScreen() {
       });
 
       const finalProposals = extractProposalsFromText(result.fullText, state);
+      const appliedIds: string[] = [];
+
+      // If Auto-Pilot is active, execute proposed actions directly into the app store
+      if (autoExecuteActions && finalProposals.length > 0) {
+        const appliedSet = new Set<string>();
+        for (const prop of finalProposals) {
+          const mut = applyProposalToStore(prop, appStore as any, appliedSet);
+          if (mut.success) {
+            appliedIds.push(prop.id);
+          }
+        }
+      }
+
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantMsgId
@@ -307,11 +436,17 @@ function AiScreen() {
                 content: result.fullText,
                 requestId: result.requestId || m.requestId,
                 proposals: finalProposals.length > 0 ? finalProposals : undefined,
+                appliedProposalIds: appliedIds.length > 0 ? appliedIds : undefined,
                 status: "complete",
               }
             : m
         )
       );
+
+      // Speak reply automatically if Auto-Voice or Live Voice Call is active
+      if ((autoVoiceReply || forceSpeakReply || showVoiceCallModal) && result.fullText.trim()) {
+        handleSpeakMessage(assistantMsgId, result.fullText);
+      }
     } catch (err: any) {
       if (err?.name === "AbortError") {
         setMessages((prev) =>
@@ -366,6 +501,8 @@ function AiScreen() {
   // Start a new conversation
   const handleNewConversation = () => {
     if (isGenerating) stopGeneration();
+    stopAiVoice();
+    setSpeakingMessageId(null);
     const newId = `conv_${Date.now()}`;
     setActiveConvId(newId);
     setMessages([]);
@@ -376,6 +513,8 @@ function AiScreen() {
   // Switch conversation safely
   const handleSelectConversation = (id: string) => {
     if (isGenerating) stopGeneration();
+    stopAiVoice();
+    setSpeakingMessageId(null);
     setActiveConvId(id);
     setCustomError(null);
   };
@@ -409,7 +548,7 @@ function AiScreen() {
   const handleOpenMessageProposalsReview = (proposals: AiProposal[]) => {
     setReviewSheetConfig({
       isOpen: true,
-      title: isAr ? "مراجعة مقترحات خطتكِ 📋" : "Review Your Plan Proposals 📋",
+      title: isAr ? "مراجعة وتخصيص الإجراءات 📋" : "Review & Customize Actions 📋",
       sourceType: "ai_suggestion",
       proposals,
     });
@@ -418,11 +557,15 @@ function AiScreen() {
   const activeVibeObj =
     FEMININE_VIBE_MODES.find((v) => v.id === activeTone) || FEMININE_VIBE_MODES[2];
 
+  const latestAssistantMessage = [...messages]
+    .reverse()
+    .find((m) => m.role === "assistant" && m.content.trim());
+
   return (
     <MobileShell hideFooter>
       <div className="flex h-screen max-h-screen flex-col bg-canvas text-ink overflow-hidden">
         {/* Luxury Aesthetic Header */}
-        <header className="flex items-center justify-between border-b border-pink-200/50 dark:border-pink-900/40 bg-card/95 backdrop-blur-md px-4 py-3 shadow-2xs shrink-0">
+        <header className="flex items-center justify-between border-b border-pink-200/50 dark:border-pink-900/40 bg-card/95 backdrop-blur-md px-3.5 py-3 shadow-2xs shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <button
               onClick={handleBack}
@@ -445,59 +588,78 @@ function AiScreen() {
                   {isAr ? "مساعدة AYXA Muse Pro" : "AYXA Muse Pro"}
                 </h1>
                 <span className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-500/20 to-fuchsia-500/20 border border-pink-400/40 px-2 py-0.5 text-[9px] font-extrabold text-hotpink uppercase tracking-wider shrink-0">
-                  PRO ✨
+                  OMNI ✨
                 </span>
               </div>
               <p className="text-[11px] font-medium text-ink-light truncate mt-0.5">
                 {isGenerating
                   ? isAr
-                    ? "تكتب لكِ خطتكِ بكل حب..."
-                    : "Crafting your plan with love..."
+                    ? "تنسّق وتدير تطبيقكِ بكل ذكاء..."
+                    : "Managing your planner with grace..."
                   : isAr
-                    ? "رفيقتكِ الذكية للتخطيط، الإنجاز، والأنوثة الواعية ♡"
-                    : "Your luxury AI life, routine & glow companion ♡"}
+                    ? "تحكم ذكي شامل بمخططكِ + صوت أنثوي ناعم ♡"
+                    : "Full app intelligence, voice & glow companion ♡"}
               </p>
             </div>
           </div>
 
           {/* Header Action Icons */}
           <div className="flex items-center gap-1.5 shrink-0">
+            {/* Live Voice Call Mode Button */}
+            <button
+              type="button"
+              onClick={() => setShowVoiceCallModal(true)}
+              aria-label={isAr ? "مكالمة صوتية مع AYXA" : "Voice Call with AYXA"}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-fuchsia-600 text-white text-[11px] font-extrabold shadow-rose hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+              title={isAr ? "مكالمة صوتية مباشرة مع AYXA 🌸" : "Live Voice Call with AYXA 🌸"}
+            >
+              <PhoneCall size={12} />
+              <span className="hidden sm:inline">{isAr ? "تحدثي صوتياً" : "Voice"}</span>
+            </button>
+
+            {/* Auto-Voice Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (speakingMessageId) {
+                  stopAiVoice();
+                  setSpeakingMessageId(null);
+                }
+                updateAiSettings({ autoVoiceReply: !autoVoiceReply });
+              }}
+              aria-label={isAr ? "تفعيل الرد الصوتي" : "Toggle AI Voice"}
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-full border transition-all cursor-pointer",
+                autoVoiceReply || speakingMessageId
+                  ? "border-hotpink bg-pink-500/15 text-hotpink shadow-rose-sm"
+                  : "border-pink-200/60 dark:border-pink-900/50 bg-surface/80 text-ink-light hover:text-hotpink"
+              )}
+              title={
+                autoVoiceReply
+                  ? isAr
+                    ? "الرد الصوتي الأنثوي مفعّل 🔊"
+                    : "Feminine AI Voice On 🔊"
+                  : isAr
+                    ? "تفعيل الرد الصوتي الأنثوي 🔇"
+                    : "Enable Feminine AI Voice 🔇"
+              }
+            >
+              {autoVoiceReply || speakingMessageId ? (
+                <Volume2 size={15} className={speakingMessageId ? "animate-pulse" : ""} />
+              ) : (
+                <VolumeX size={15} />
+              )}
+            </button>
+
             {/* Glow Credits Pill */}
             <button
               type="button"
               onClick={() => setShowCreditsModal(true)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-pink-500/15 to-amber-500/15 border border-pink-300/60 dark:border-pink-800/60 text-hotpink text-xs font-extrabold hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-pink-500/15 to-amber-500/15 border border-pink-300/60 dark:border-pink-800/60 text-hotpink text-xs font-extrabold hover:scale-105 active:scale-95 transition-all cursor-pointer"
               title={isAr ? "رصيد نقاطكِ" : "Your Glow Credits"}
             >
-              <Sparkles size={12} className="text-hotpink" />
+              <Sparkles size={11} className="text-hotpink" />
               <span>{state.aiCredits ?? 50}</span>
-            </button>
-
-            {/* Context Selector Button */}
-            <button
-              type="button"
-              onClick={() => setShowContextModal(true)}
-              aria-label={isAr ? "صلاحيات سياق التخطيط" : "Planner Context Settings"}
-              className={cn(
-                "relative flex h-8 w-8 items-center justify-center rounded-full border transition-all cursor-pointer",
-                contextScope.granted
-                  ? "border-emerald-400/70 bg-emerald-500/15 text-emerald-500"
-                  : "border-pink-200/60 dark:border-pink-900/50 bg-surface/80 text-ink-light hover:text-hotpink"
-              )}
-              title={
-                contextScope.granted
-                  ? isAr
-                    ? "سياق التخطيط مفعّل"
-                    : "Planner context active"
-                  : isAr
-                    ? "الخصوصية محمية (السياق مغلق)"
-                    : "Privacy guarded (context closed)"
-              }
-            >
-              <Shield size={15} />
-              {contextScope.granted && (
-                <span className="absolute top-1 end-1 h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              )}
             </button>
 
             {/* Saved Chats Drawer Button */}
@@ -516,7 +678,7 @@ function AiScreen() {
               onClick={() => setShowSettingsModal(true)}
               aria-label={isAr ? "إعدادات AYXA Muse Pro" : "AYXA Muse Pro Settings"}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-pink-200/60 dark:border-pink-900/50 bg-surface/80 text-ink-light hover:text-hotpink transition-colors cursor-pointer"
-              title={isAr ? "تخصيص الأسلوب والمحرك ⚙️" : "Customize Vibe & Engine ⚙️"}
+              title={isAr ? "إعدادات الاستوديو والصلاحيات ⚙️" : "Studio & Omni-Access Settings ⚙️"}
             >
               <Sliders size={15} />
             </button>
@@ -533,7 +695,7 @@ function AiScreen() {
           </div>
         </header>
 
-        {/* Feminine Aesthetic Vibe Selector Ribbon (100% Girls Aesthetic — Soft Glow / That Girl Pro / Barakah Soul) */}
+        {/* Feminine Aesthetic Vibe Selector Ribbon */}
         <div className="border-b border-pink-200/40 dark:border-pink-900/30 bg-surface/40 backdrop-blur-xs px-4 py-2 shrink-0">
           <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto">
             <div className="grid grid-cols-3 gap-1.5 flex-1 bg-canvas/90 p-1 rounded-2xl border border-pink-200/60 dark:border-pink-900/50">
@@ -562,7 +724,7 @@ function AiScreen() {
               type="button"
               onClick={() => setShowSettingsModal(true)}
               className="shrink-0 flex items-center gap-1 rounded-2xl border border-pink-300/50 dark:border-pink-800/50 bg-canvas/90 px-2.5 py-2 text-[10px] font-extrabold text-hotpink hover:border-hotpink transition-all cursor-pointer"
-              title={isAr ? "عمق التخطيط" : "Planning Depth"}
+              title={isAr ? "عمق الذكاء والتنفيذ" : "Intelligence Depth"}
             >
               <span>
                 {activeLevel === "saver"
@@ -593,15 +755,15 @@ function AiScreen() {
           </div>
         )}
 
-        {/* Scrollable Conversation Area (Custom sleek scrollbar — no ugly white bar) */}
+        {/* Scrollable Conversation Area */}
         <div
           ref={chatScrollRef}
           className="flex-1 overflow-y-auto px-4 py-4 space-y-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-pink-500/25 hover:[&::-webkit-scrollbar-thumb]:bg-pink-500/40"
         >
-          {/* Welcome Screen & Starter Prompts (When messages is empty) */}
+          {/* Welcome Screen & Omni-App Quick Commands (When messages is empty) */}
           {messages.length === 0 && (
             <div className="space-y-5 py-1 max-w-2xl mx-auto animate-fade-in">
-              {/* Luxury Feminine Hero Card */}
+              {/* Luxury Feminine Hero Card (100% White-Labeled — Zero Model/Provider Names) */}
               <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-pink-500/15 via-rose-500/10 to-fuchsia-500/15 dark:from-pink-950/50 dark:via-rose-950/35 dark:to-purple-950/45 border border-pink-300/60 dark:border-pink-800/50 p-5 text-center shadow-rose-sm">
                 <div className="mx-auto mb-2.5 flex h-14 w-14 items-center justify-center rounded-3xl bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-600 text-2xl text-white shadow-rose">
                   {activeVibeObj.emoji}
@@ -611,46 +773,65 @@ function AiScreen() {
                 </p>
                 <h2 className="mt-1 font-display text-sm font-extrabold text-ink">
                   {isAr
-                    ? "أهلاً بكِ في مساحة AYXA Muse Pro الخاصة بكِ ✨"
+                    ? "أهلاً بكِ في استوديو AYXA Muse Pro الذكي ✨"
                     : "Welcome to Your AYXA Muse Pro Sanctuary ✨"}
                 </h2>
                 <p className="mt-1.5 text-[12px] font-medium text-ink-light max-w-md mx-auto leading-relaxed">
                   {isAr
-                    ? "صمّمي يومكِ بنعومة، قسّمي أهدافكِ الطموحة، ووازني بين دراستكِ، عنايتكِ بنفسكِ، وأوقات صلواتكِ بكل حب وجمال ♡"
-                    : "Design your dream routine, break down ambitious goals, and harmonize your studies, self-care, and prayer times with grace ♡"}
+                    ? "وكيلتكِ الذكية المتكاملة متصلة بجميع أقسام تطبيقكِ: أطلبي منها بالصوت أو الكتابة إضافة مهام، تسجيل عادات، شرب الماء، ترتيب الصلوات، أو تنظيم أهدافكِ وماليتكِ فوراً ♡"
+                    : "Your genius AI companion has full access to manage your entire app: ask by voice or text to schedule tasks, log habits & water, sync prayers, or organize your goals & finances ♡"}
                 </p>
 
-                <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2 text-[10px] font-bold">
+                <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2 text-[10px] font-extrabold">
                   <span className="bg-card/90 px-3 py-1 rounded-full border border-pink-300/50 dark:border-pink-800/50 text-hotpink">
-                    {activeVibeObj.emoji} {isAr ? activeVibeObj.labelAr : activeVibeObj.labelEn}
+                    {fullAppAccess
+                      ? isAr
+                        ? "🌟 تحكم شامل بالتطبيق مفعّل"
+                        : "🌟 Full App Access Active"
+                      : isAr
+                        ? "🔒 وصول محدود"
+                        : "🔒 Scoped Access"}
+                  </span>
+                  <span className="bg-card/90 px-3 py-1 rounded-full border border-pink-300/50 dark:border-pink-800/50 text-emerald-600 dark:text-emerald-400">
+                    {autoExecuteActions
+                      ? isAr
+                        ? "⚡ التنفيذ التلقائي الفوري مفعّل"
+                        : "⚡ Auto-Pilot Execution On"
+                      : isAr
+                        ? "📋 مراجعة يدوية"
+                        : "📋 Manual Review"}
                   </span>
                   <button
                     type="button"
-                    onClick={() => setShowSettingsModal(true)}
-                    className="bg-card/90 px-3 py-1 rounded-full border border-pink-300/50 dark:border-pink-800/50 text-ink-light hover:text-hotpink transition-colors cursor-pointer"
+                    onClick={() => setShowVoiceCallModal(true)}
+                    className="bg-gradient-to-r from-pink-500 to-rose-600 text-white px-3 py-1 rounded-full shadow-rose hover:opacity-95 transition-opacity cursor-pointer"
                   >
-                    ✨ {state.aiSettings?.model || COARENA_DEFAULT_MODEL}
+                    🎙️ {isAr ? "تحدثي مع AYXA صوتياً" : "Talk to AYXA by Voice"}
                   </button>
                 </div>
               </div>
 
-              {/* Aesthetic Girl Starter Prompts */}
+              {/* Omni-App Smart Agent Commands */}
               <div className="space-y-2.5">
                 <p className="text-[11px] font-extrabold uppercase tracking-wider text-hotpink flex items-center gap-1.5 px-1">
-                  <Sparkles size={13} />
-                  <span>{isAr ? "ابدئي تخطيطكِ الأنثوي بلمسة واحدة:" : " Curated For Your Glow:"}</span>
+                  <Zap size={13} />
+                  <span>
+                    {isAr
+                      ? "أوامر الإدارة الشاملة للتطبيق بلمسة واحدة:"
+                      : "1-Tap Full App Management Commands:"}
+                  </span>
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {STARTER_PROMPTS.map((p) => {
-                    const promptText = isAr ? p.ar : p.en;
+                  {OMNI_QUICK_ACTIONS.map((cmd) => {
+                    const promptText = isAr ? cmd.ar : cmd.en;
                     return (
                       <button
-                        key={p.id}
+                        key={cmd.id}
                         type="button"
                         onClick={() => void handleSend(promptText)}
                         className="flex items-center justify-between text-start p-3.5 rounded-2xl border border-pink-200/70 dark:border-pink-900/50 bg-card/90 hover:border-hotpink hover:bg-gradient-to-r hover:from-pink-500/10 hover:to-transparent transition-all cursor-pointer group shadow-2xs"
                       >
-                        <span className="text-xs font-bold text-ink group-hover:text-hotpink transition-colors">
+                        <span className="text-xs font-bold text-ink group-hover:text-hotpink transition-colors leading-relaxed">
                           {promptText}
                         </span>
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-pink-500/10 text-hotpink text-xs rtl:rotate-180 group-hover:bg-hotpink group-hover:text-white transition-all shrink-0 ms-2">
@@ -665,38 +846,17 @@ function AiScreen() {
               {/* Feminine Mindset & Glow Topics */}
               <div className="space-y-2.5">
                 <p className="text-[11px] font-extrabold uppercase tracking-wider text-ink-light flex items-center gap-1.5 px-1">
-                  <Bookmark size={12} className="text-hotpink" />
+                  <Sparkles size={12} className="text-hotpink" />
                   <span>
-                    {isAr ? "جلسات الإلهام والعناية الذاتية:" : "Self-Care, Barakah & Boss Girl Topics:"}
+                    {isAr ? "تخطيط اليوم، الدراسة، والروتين الأنثوي:" : "Daily Glow, Study & Routine Prompts:"}
                   </span>
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    {
-                      ar: "كيف أعيش بعقلية البركة والإنتاجية الهادئة؟ 🌙",
-                      en: "How do I cultivate the Barakah Mindset? 🌙",
-                    },
-                    {
-                      ar: "رتّبي لي روتيناً صباحياً أنثوياً هادئاً قبل الدراسة أو العمل 🌸",
-                      en: "Design a soft, aesthetic morning routine before study/work 🌸",
-                    },
-                    {
-                      ar: "كيف أتغلب على التسويف والتشتت بلطف مع نفسي؟ 🌷",
-                      en: "Overcome procrastination with gentle self-compassion 🌷",
-                    },
-                    {
-                      ar: "نسّقي جدول يومي بين أوقات الصلوات الخمس والعناية الذاتية 🕌",
-                      en: "Harmonize my daily schedule around the 5 prayers & self-care 🕌",
-                    },
-                    {
-                      ar: "خطة أسبوعية متكاملة للتركيز الدراسي وتحقيق أهدافي 👑",
-                      en: "Create a That Girl weekly study & goal focus plan 👑",
-                    },
-                  ].map((topic, i) => {
-                    const text = isAr ? topic.ar : topic.en;
+                  {STARTER_PROMPTS.map((p) => {
+                    const text = isAr ? p.ar : p.en;
                     return (
                       <button
-                        key={i}
+                        key={p.id}
                         type="button"
                         onClick={() => void handleSend(text)}
                         className="text-xs font-semibold px-3.5 py-2 rounded-2xl border border-pink-200/70 dark:border-pink-900/50 bg-surface/60 hover:bg-card hover:border-hotpink hover:text-hotpink text-ink transition-all cursor-pointer shadow-2xs"
@@ -786,6 +946,9 @@ function AiScreen() {
                   ? m.proposals
                   : extractProposalsFromText(rawText, state)
                 : [];
+              const isSpeakingThis = speakingMessageId === m.id;
+              const wasAutoApplied =
+                Array.isArray(m.appliedProposalIds) && m.appliedProposalIds.length > 0;
 
               return (
                 <div
@@ -809,15 +972,42 @@ function AiScreen() {
                         : "rounded-bl-xs border border-pink-200/80 dark:border-pink-800/50 bg-card/95 text-ink shadow-md"
                     )}
                   >
-                    {/* Top Muse Badge inside Assistant Bubble */}
+                    {/* Top Muse Badge & Voice Listen Button inside Assistant Bubble */}
                     {!isUser && (
-                      <div className="mb-2 flex items-center justify-between border-b border-pink-200/40 dark:border-pink-900/40 pb-1.5">
+                      <div className="mb-2 flex items-center justify-between border-b border-pink-200/40 dark:border-pink-900/40 pb-1.5 gap-2">
                         <span className="text-[11px] font-extrabold text-hotpink flex items-center gap-1">
                           <span>✨ AYXA Muse Pro</span>
                         </span>
-                        <span className="text-[10px] font-bold text-ink-light bg-surface/90 px-2 py-0.5 rounded-full border border-pink-200/50 dark:border-pink-900/40">
-                          {activeVibeObj.emoji} {isAr ? activeVibeObj.labelAr : activeVibeObj.labelEn}
-                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          {/* Listen / Speak Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleSpeakMessage(m.id, rawText)}
+                            className={cn(
+                              "flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border transition-all cursor-pointer",
+                              isSpeakingThis
+                                ? "bg-gradient-to-r from-pink-500 to-rose-600 text-white border-hotpink shadow-rose"
+                                : "bg-surface/90 text-hotpink border-pink-200/60 dark:border-pink-800/50 hover:border-hotpink"
+                            )}
+                          >
+                            {isSpeakingThis ? (
+                              <>
+                                <Volume2 size={11} className="animate-bounce" />
+                                <span>{isAr ? "تتحدث... (إيقاف)" : "Speaking... (Stop)"}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Volume2 size={11} />
+                                <span>{isAr ? "استماع 🔊" : "Listen 🔊"}</span>
+                              </>
+                            )}
+                          </button>
+
+                          <span className="text-[10px] font-bold text-ink-light bg-surface/90 px-2 py-0.5 rounded-full border border-pink-200/50 dark:border-pink-900/40 hidden sm:inline-block">
+                            {activeVibeObj.emoji} {isAr ? activeVibeObj.labelAr : activeVibeObj.labelEn}
+                          </span>
+                        </div>
                       </div>
                     )}
 
@@ -825,10 +1015,11 @@ function AiScreen() {
                       <ReactMarkdown>{displayText}</ReactMarkdown>
                     </div>
 
-                    {/* Proposals Preview Card (If model returned a plan) */}
+                    {/* Proposals Preview & Instant Action Card */}
                     {!isUser && proposals.length > 0 && (
                       <AiProposalCard
                         proposals={proposals}
+                        isApplied={wasAutoApplied}
                         onReview={() => handleOpenMessageProposalsReview(proposals)}
                       />
                     )}
@@ -909,8 +1100,8 @@ function AiScreen() {
                   <span className="h-2 w-2 rounded-full bg-hotpink animate-ping" />
                   <span>
                     {isAr
-                      ? "AYXA Muse Pro تنسّق إجابتكِ بكل حب..."
-                      : "AYXA Muse Pro is curating your plan..."}
+                      ? "AYXA Muse Pro تحلل بيانات تطبيقكِ وتنسّق خطتكِ..."
+                      : "AYXA Muse Pro is analyzing your planner & curating..."}
                   </span>
                 </div>
               </div>
@@ -935,7 +1126,7 @@ function AiScreen() {
           </div>
         </div>
 
-        {/* Luxury Glassmorphic Composer (Clean padding — no dead bottom gap) */}
+        {/* Luxury Glassmorphic Composer with Voice Microphone & Send */}
         <div className="border-t border-pink-200/50 dark:border-pink-900/40 bg-card/95 backdrop-blur-md px-4 pt-3 pb-[max(14px,env(safe-area-inset-bottom,14px))] shrink-0">
           <div className="max-w-2xl mx-auto">
             <form
@@ -943,16 +1134,49 @@ function AiScreen() {
                 e.preventDefault();
                 void handleSend(input);
               }}
-              className="flex items-center gap-2 rounded-full border-2 border-pink-300/70 dark:border-pink-800/60 bg-canvas px-4 py-1.5 focus-within:border-hotpink focus-within:shadow-rose-sm transition-all"
+              className={cn(
+                "flex items-center gap-2 rounded-full border-2 bg-canvas px-3 py-1.5 transition-all",
+                isListeningMic
+                  ? "border-hotpink shadow-rose"
+                  : "border-pink-300/70 dark:border-pink-800/60 focus-within:border-hotpink focus-within:shadow-rose-sm"
+              )}
             >
+              {/* Voice Dictation Microphone Button */}
+              <button
+                type="button"
+                onClick={() => handleToggleMic(false)}
+                aria-label={isAr ? "التحدث بالصوت" : "Voice Input"}
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full transition-all cursor-pointer shrink-0",
+                  isListeningMic
+                    ? "bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-rose animate-pulse"
+                    : "bg-pink-500/10 text-hotpink hover:bg-pink-500/20"
+                )}
+                title={
+                  isListeningMic
+                    ? isAr
+                      ? "جارٍ الاستماع... اضغطي للإيقاف"
+                      : "Listening... Tap to stop"
+                    : isAr
+                      ? "تحدثي بالصوت 🎙️"
+                      : "Speak by voice 🎙️"
+                }
+              >
+                {isListeningMic ? <MicOff size={16} /> : <Mic size={16} />}
+              </button>
+
               <input
                 value={input}
                 dir={dir}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={
-                  isAr
-                    ? "اسألي AYXA Muse Pro عن يومكِ، أهدافكِ، أو روتينكِ..."
-                    : "Ask AYXA Muse Pro about your day, goals, or glow routine..."
+                  isListeningMic
+                    ? isAr
+                      ? "تحدثي الآن... أستمع إليكِ بكل حب 🌸"
+                      : "Speak now... I'm listening 🌸"
+                    : isAr
+                      ? "اطلبي من AYXA إضافة مهام، عادات، ماء، أو خطة..."
+                      : "Ask AYXA to add tasks, habits, water, or plan your day..."
                 }
                 className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-light/65 py-1.5"
               />
@@ -980,6 +1204,128 @@ function AiScreen() {
             </form>
           </div>
         </div>
+
+        {/* Live Hands-Free Feminine Voice Call Studio Modal */}
+        {showVoiceCallModal && (
+          <div className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-gradient-to-b from-[#1f0a18] via-[#2d0f24] to-[#140510] text-white p-6 animate-fade-in">
+            {/* Top Bar */}
+            <div className="w-full max-w-md flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-extrabold tracking-wide text-pink-200">
+                  {isAr ? "جلسة صوتية مباشرة — AYXA Muse Pro ✨" : "AYXA Muse Pro — Live Voice Sanctuary ✨"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  stopAiVoice();
+                  recognitionRef.current?.stop();
+                  setIsListeningMic(false);
+                  setSpeakingMessageId(null);
+                  setShowVoiceCallModal(false);
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-pink-200 hover:bg-white/20 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Center Glowing Feminine Aura Orb */}
+            <div className="flex flex-col items-center text-center max-w-sm space-y-6 my-auto">
+              <div className="relative flex items-center justify-center">
+                <div
+                  className={cn(
+                    "absolute h-48 w-48 rounded-full bg-gradient-to-r from-pink-500/30 via-rose-500/30 to-fuchsia-500/30 blur-2xl transition-all duration-700",
+                    (isListeningMic || speakingMessageId || isGenerating) && "scale-125 animate-pulse"
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleToggleMic(true)}
+                  className={cn(
+                    "relative flex h-36 w-36 flex-col items-center justify-center rounded-full bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-600 shadow-2xl border-4 border-pink-300/40 transition-transform cursor-pointer",
+                    isListeningMic ? "scale-110 ring-8 ring-pink-500/30" : "hover:scale-105"
+                  )}
+                >
+                  <span className="text-4xl mb-1">
+                    {speakingMessageId ? "🔊" : isGenerating ? "✨" : isListeningMic ? "🎙️" : "🌸"}
+                  </span>
+                  <span className="text-[11px] font-extrabold text-white/95">
+                    {isListeningMic
+                      ? isAr
+                        ? "أستمع إليكِ..."
+                        : "Listening..."
+                      : speakingMessageId
+                        ? isAr
+                          ? "AYXA تتحدث..."
+                          : "AYXA Speaking..."
+                        : isGenerating
+                          ? isAr
+                            ? "تفكر..."
+                            : "Thinking..."
+                          : isAr
+                            ? "اضغطي للتحدث"
+                            : "Tap to Speak"}
+                  </span>
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-display text-lg font-extrabold text-pink-100">
+                  {isAr ? "تحدثي مع رفيقتكِ AYXA Muse Pro ♡" : "Speak Naturally with AYXA Muse Pro ♡"}
+                </h3>
+                <p className="text-xs text-pink-200/80 leading-relaxed min-h-[40px]">
+                  {voiceCallTranscript
+                    ? `“${voiceCallTranscript}”`
+                    : latestAssistantMessage
+                      ? formatPlanTextWithoutRawJson(latestAssistantMessage.content).slice(0, 160) + "..."
+                      : isAr
+                        ? "اضغطي على الدائرة الوردية واطلبي ترتيب يومكِ، إضافة مهامكِ، أو استشارة هادئة وستجيبكِ بصوتها فوراً."
+                        : "Tap the glowing rose orb to ask for daily plans, add tasks or habits, and she will reply aloud immediately."}
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom Controls */}
+            <div className="w-full max-w-xs flex items-center justify-center gap-4 pb-4">
+              <button
+                type="button"
+                onClick={() => handleToggleMic(true)}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 rounded-full py-3 px-5 text-xs font-extrabold shadow-xl transition-all cursor-pointer",
+                  isListeningMic
+                    ? "bg-rose-600 text-white animate-pulse"
+                    : "bg-gradient-to-r from-pink-500 to-rose-600 text-white"
+                )}
+              >
+                {isListeningMic ? <MicOff size={15} /> : <Mic size={15} />}
+                <span>
+                  {isListeningMic
+                    ? isAr
+                      ? "إيقاف الميكروفون"
+                      : "Stop Mic"
+                    : isAr
+                      ? "تحدثي الآن 🎙️"
+                      : "Start Speaking 🎙️"}
+                </span>
+              </button>
+
+              {speakingMessageId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopAiVoice();
+                    setSpeakingMessageId(null);
+                  }}
+                  className="rounded-full bg-white/15 px-4 py-3 text-xs font-bold text-pink-200 hover:bg-white/25 cursor-pointer"
+                >
+                  {isAr ? "إيقاف الصوت" : "Mute"}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Modals & Drawers */}
         <AiSettingsModal

@@ -6,6 +6,7 @@ import {
   extractProposalsFromText,
   formatPlanTextWithoutRawJson,
   buildUserContextSummary,
+  buildFullAppOmniContext,
   applyProposalToStore,
   normalizeAiConversation,
   normalizeAiContextConsent,
@@ -19,8 +20,10 @@ import {
   COARENA_ANTHROPIC_BASE_URL,
   COARENA_API_KEY,
   COARENA_DEFAULT_MODEL,
+  FREE_PRO_MODELS,
   buildAxyaProSystemPrompt,
 } from "../src/lib/coarenaClient.ts";
+import { cleanTextForSpeech } from "../src/lib/aiVoiceEngine.ts";
 
 test("AI Planner — Default Context Scope: strictly no personal context shared by default", () => {
   assert.equal(DEFAULT_CONTEXT_SCOPE.granted, false);
@@ -392,20 +395,62 @@ test("AI Planner — Normalization & Conversation Persistence", () => {
   assert.equal(normalized.messages[2].proposals[0].title, "Morning walk");
 });
 
-test("AI Planner — Coarena API Configuration, gpt-6-luna Default & AYXA Muse Pro Identity", () => {
+test("AI Planner — Coarena API Configuration, 3 Free Models Only, Omni-App Access & AI Voice", () => {
   assert.equal(COARENA_OPENAI_BASE_URL, "https://coarena.ai/api/v1");
   assert.equal(COARENA_ANTHROPIC_BASE_URL, "https://coarena.ai/api");
   assert.equal(COARENA_API_KEY, "coa_2a4a92f4d109fd9ea72e9e2406545c1c");
   assert.equal(COARENA_DEFAULT_MODEL, "gpt-6-luna");
 
+  // Strictly the 3 approved free 128K models
+  assert.deepEqual(FREE_PRO_MODELS, [
+    "gpt-6-luna",
+    "gemini-3-8-flash",
+    "deepseek-v4-1-flash-1017",
+  ]);
+
   const femPrompt = buildAxyaProSystemPrompt({ level: "balanced", tone: "barakah" });
   assert.ok(femPrompt.includes("AYXA Muse Pro"));
-  assert.ok(femPrompt.includes("مساعدة AYXA Pro"));
+  assert.ok(femPrompt.includes("مساعدة AYXA Muse Pro"));
   assert.ok(!femPrompt.includes("أيكسا"));
 
   const bossPrompt = buildAxyaProSystemPrompt({ level: "deep", tone: "action" });
   assert.ok(bossPrompt.includes("THAT GIRL PRO"));
   assert.ok(!bossPrompt.includes("أيكسا"));
+
+  // Omni-App Context & Mutations across Habits, Water, Quran, and Finance
+  const omniSnap = buildFullAppOmniContext(
+    {
+      user: { name: "Sarah" },
+      xp: 450,
+      tasks: [{ id: "t1", title: "Finish anatomy notes", done: false }],
+      habits: [{ id: "h1", name: "Morning Matcha", emoji: "🍵", streak: 5 }],
+      dailyHydration: { "2026-11-18": 750 },
+    },
+    "2026-11-18"
+  );
+  assert.ok(omniSnap.includes("Finish anatomy notes"));
+  assert.ok(omniSnap.includes("Morning Matcha"));
+  assert.ok(omniSnap.includes("750ml"));
+
+  let loggedWater = 0;
+  let createdHabit = null;
+  const applied = new Set();
+  applyProposalToStore(
+    { id: "p_water", type: "hydration", title: "Drink 500ml", destination: "wellness", amount: 500 },
+    { addTask: () => {}, addHydration: (ml) => { loggedWater += ml; } },
+    applied
+  );
+  applyProposalToStore(
+    { id: "p_hab", type: "habit", title: "Evening Skincare", destination: "habits", emoji: "🌸" },
+    { addTask: () => {}, addHabit: (h) => { createdHabit = h; } },
+    applied
+  );
+  assert.equal(loggedWater, 500);
+  assert.equal(createdHabit?.name, "Evening Skincare");
+
+  // Voice TTS cleaner strips JSON blocks and emojis cleanly
+  const cleanedVoice = cleanTextForSpeech("Hello **Queen** 🌸!\n```json:ayxa_plan\n{\"proposals\":[]}\n```");
+  assert.equal(cleanedVoice, "Hello Queen !");
 
   // Verify requestId and feedbackRating persist in normalizeAiConversation
   const convWithFeedback = normalizeAiConversation({

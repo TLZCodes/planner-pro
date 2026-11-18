@@ -1,12 +1,7 @@
 import { useState, useEffect } from "react";
-import { X, Sparkles, Shield, Zap, Sliders, Check, Coins, Heart, Cpu } from "lucide-react";
+import { X, Sparkles, Zap, Check, Coins, Heart, Volume2 } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { useApp, type AiSettings, DEFAULT_AI_SETTINGS } from "@/lib/store";
-import {
-  COARENA_DEFAULT_MODEL,
-  FALLBACK_COARENA_MODELS,
-  fetchCoarenaModels,
-} from "@/lib/coarenaClient";
 import { cn } from "@/lib/utils";
 
 interface AiSettingsModalProps {
@@ -23,12 +18,14 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
 
   const [level, setLevel] = useState<AiSettings["level"]>(currentSettings.level);
   const [tone, setTone] = useState<AiSettings["tone"]>(currentSettings.tone);
-  const [selectedModel, setSelectedModel] = useState<string>(
-    currentSettings.model || COARENA_DEFAULT_MODEL
+  const [fullAppAccess, setFullAppAccess] = useState<boolean>(
+    currentSettings.fullAppAccess !== false
   );
-  const [availableModels, setAvailableModels] = useState<string[]>(FALLBACK_COARENA_MODELS);
-  const [confirmBefore, setConfirmBefore] = useState<boolean>(
-    Boolean(currentSettings.confirmBeforeGenerating)
+  const [autoExecuteActions, setAutoExecuteActions] = useState<boolean>(
+    currentSettings.autoExecuteActions !== false
+  );
+  const [autoVoiceReply, setAutoVoiceReply] = useState<boolean>(
+    Boolean(currentSettings.autoVoiceReply)
   );
   const [lowCreditThreshold, setLowCreditThreshold] = useState<number>(
     currentSettings.lowCreditAlertThreshold ?? 5
@@ -39,14 +36,18 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
     if (isOpen) {
       setLevel(currentSettings.level);
       setTone(currentSettings.tone);
-      setSelectedModel(currentSettings.model || COARENA_DEFAULT_MODEL);
-      void fetchCoarenaModels().then((models) => {
-        if (models && models.length > 0) {
-          setAvailableModels(models);
-        }
-      });
+      setFullAppAccess(currentSettings.fullAppAccess !== false);
+      setAutoExecuteActions(currentSettings.autoExecuteActions !== false);
+      setAutoVoiceReply(Boolean(currentSettings.autoVoiceReply));
     }
-  }, [isOpen, currentSettings.level, currentSettings.tone, currentSettings.model]);
+  }, [
+    isOpen,
+    currentSettings.level,
+    currentSettings.tone,
+    currentSettings.fullAppAccess,
+    currentSettings.autoExecuteActions,
+    currentSettings.autoVoiceReply,
+  ]);
 
   if (!isOpen) return null;
 
@@ -54,15 +55,16 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
     updateAiSettings({
       level,
       tone,
-      model: selectedModel || COARENA_DEFAULT_MODEL,
-      confirmBeforeGenerating: confirmBefore,
+      fullAppAccess,
+      autoExecuteActions,
+      autoVoiceReply,
       lowCreditAlertThreshold: lowCreditThreshold,
     });
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
       onClose();
-    }, 800);
+    }, 700);
   };
 
   return (
@@ -80,8 +82,8 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
               </h3>
               <p className="text-[11px] font-medium text-ink-light">
                 {isAr
-                  ? "خصّصي أسلوب رفيقتكِ الذكية، عمق الخطط، والمحرك"
-                  : "Customize your feminine AI muse, plan depth & engine"}
+                  ? "خصّصي أسلوب رفيقتكِ الذكية، الصلاحيات، والصوت"
+                  : "Customize your feminine AI muse, omni-access & voice"}
               </p>
             </div>
           </div>
@@ -157,12 +159,93 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
             </div>
           </div>
 
+          {/* Omni-App Pro Agent Powers (Full App Access, Auto-Pilot, AI Voice) */}
+          <div className="space-y-2.5 rounded-2xl border border-pink-300/60 dark:border-pink-800/50 bg-gradient-to-br from-pink-500/10 via-rose-500/5 to-fuchsia-500/10 p-3.5">
+            <p className="text-xs font-extrabold text-hotpink flex items-center gap-1.5">
+              <Sparkles size={14} />
+              <span>
+                {isAr
+                  ? "قدرات الوكيل الذكي الشامل (Pro Agent Powers):"
+                  : "Omni-App Pro Agent Capabilities:"}
+              </span>
+            </p>
+
+            {/* 1. Full App Access */}
+            <label className="flex items-center justify-between gap-3 py-1.5 cursor-pointer">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-ink">
+                  {isAr
+                    ? "🌟 وصول شامل لجميع أقسام التطبيق"
+                    : "🌟 Full Omni-App Access"}
+                </p>
+                <p className="text-[10px] text-ink-light leading-relaxed">
+                  {isAr
+                    ? "السماح لـ AYXA بقراءة وإدارة المهام، العادات، الأهداف، الماء، الصلوات، الكتب، والمالية"
+                    : "Allow AYXA to read & manage Tasks, Habits, Goals, Water, Prayers, Books & Finance"}
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={fullAppAccess}
+                onChange={(e) => setFullAppAccess(e.target.checked)}
+                className="h-4 w-4 rounded accent-hotpink shrink-0 cursor-pointer"
+              />
+            </label>
+
+            {/* 2. Auto-Pilot Execution */}
+            <label className="flex items-center justify-between gap-3 py-1.5 border-t border-pink-200/40 dark:border-pink-900/40 cursor-pointer">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-ink">
+                  {isAr
+                    ? "⚡ التنفيذ التلقائي الفوري (Auto-Pilot)"
+                    : "⚡ Auto-Pilot Instant Execution"}
+                </p>
+                <p className="text-[10px] text-ink-light leading-relaxed">
+                  {isAr
+                    ? "إضافة المهام، العادات، والخطط المقترحة مباشرة إلى تطبيقكِ فور انتهاء الرد"
+                    : "Automatically save proposed tasks, habits, and logs into your planner immediately"}
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={autoExecuteActions}
+                onChange={(e) => setAutoExecuteActions(e.target.checked)}
+                className="h-4 w-4 rounded accent-hotpink shrink-0 cursor-pointer"
+              />
+            </label>
+
+            {/* 3. Feminine AI Voice Reply */}
+            <label className="flex items-center justify-between gap-3 py-1.5 border-t border-pink-200/40 dark:border-pink-900/40 cursor-pointer">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-ink flex items-center gap-1">
+                  <Volume2 size={13} className="text-hotpink" />
+                  <span>
+                    {isAr
+                      ? "الرد الصوتي الأنثوي التلقائي"
+                      : "Auto-Speak Feminine AI Voice"}
+                  </span>
+                </p>
+                <p className="text-[10px] text-ink-light leading-relaxed">
+                  {isAr
+                    ? "قراءة ردود AYXA Muse Pro بصوت أنثوي ناعم تلقائياً"
+                    : "Automatically read AYXA Muse Pro replies aloud in a soft feminine voice"}
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={autoVoiceReply}
+                onChange={(e) => setAutoVoiceReply(e.target.checked)}
+                className="h-4 w-4 rounded accent-hotpink shrink-0 cursor-pointer"
+              />
+            </label>
+          </div>
+
           {/* Generation Depth Tiers */}
           <div className="space-y-2.5">
             <label className="text-xs font-extrabold text-ink flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Zap size={14} className="text-hotpink" />
-                <span>{isAr ? "عمق التخطيط والتفصيل:" : "Planning Depth & Style:"}</span>
+                <span>{isAr ? "عمق التخطيط والذكاء:" : "Intelligence Depth & Style:"}</span>
               </span>
               <span className="text-[10px] text-hotpink font-bold">
                 {level === "deep"
@@ -181,9 +264,9 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                   id: "saver",
                   emoji: "✨",
                   titleEn: "Quick Spark",
-                  titleAr: "إلهام سريع ومختصر (Quick Spark)",
+                  titleAr: "إلهام سريع ومباشر (Quick Spark)",
                   badge: isAr ? "1 نقطة" : "1 pt",
-                  descEn: "Chic, concise bullet points for instant clarity and daily checklists.",
+                  descEn: "Chic, concise bullet points for instant clarity and quick actions.",
                   descAr: "نقاط أنيقة، سريعة ومباشرة لترتيب مهامكِ اليومية في ثوانٍ.",
                 },
                 {
@@ -201,7 +284,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                   titleEn: "Royal Masterplan",
                   titleAr: "الخطة الملكية العميقة (Royal Masterplan)",
                   badge: isAr ? "2 نقاط" : "2 pts",
-                  descEn: "Deep hourly schedules, goal milestones, and mindset breakthroughs.",
+                  descEn: "Deep hourly schedules, goal milestones, and genius mindset breakthroughs.",
                   descAr: "خطة تفصيلية بالساعات، تقسيم عميق للأهداف الكبرى، وإرشاد متكامل.",
                 },
               ].map((item) => {
@@ -240,33 +323,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
             </div>
           </div>
 
-          {/* Coarena AI Pro Engine Selector */}
-          <div className="space-y-2">
-            <label className="text-xs font-extrabold text-ink flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Cpu size={14} className="text-hotpink" />
-                <span>{isAr ? "محرك الذكاء الاصطناعي (Coarena Pro):" : "AI Model Engine:"}</span>
-              </span>
-              <span className="text-[10px] font-mono text-hotpink font-bold">
-                {selectedModel}
-              </span>
-            </label>
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              className="w-full rounded-2xl border border-pink-300/60 dark:border-pink-800/50 bg-surface px-3.5 py-2.5 text-xs font-bold text-ink outline-none focus:border-hotpink transition-colors cursor-pointer"
-            >
-              {availableModels.map((modelId) => (
-                <option key={modelId} value={modelId}>
-                  {modelId === "gpt-6-luna"
-                    ? `✨ ${modelId} (AYXA Muse Pro — Recommended)`
-                    : modelId}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Credit Balance & Protection */}
+          {/* Credit Balance & Low Credit Alert */}
           <div className="space-y-3 rounded-2xl border border-pink-200/50 dark:border-pink-900/40 bg-surface/40 p-3.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-ink flex items-center gap-1.5">
@@ -324,7 +381,7 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                 <span>{isAr ? "تم الحفظ ♡" : "Saved ♡"}</span>
               </>
             ) : (
-              <span>{isAr ? "حفظ الإعدادات ✨" : "Save Vibe ✨"}</span>
+              <span>{isAr ? "حفظ الإعدادات ✨" : "Save Studio ✨"}</span>
             )}
           </button>
         </div>
