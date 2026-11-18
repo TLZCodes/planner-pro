@@ -355,17 +355,15 @@ function Dashboard() {
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-rose text-lg shrink-0">
-                  {state.aiPersona === "masculine" ? "🌿" : "🌸"}
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-600 text-white shadow-rose text-lg shrink-0">
+                  🌸
                 </span>
                 <div className="min-w-0">
                   <h3 className="text-sm font-extrabold text-ink flex items-center gap-1.5 truncate">
                     <span>
                       {lang === "ar"
-                        ? state.aiPersona === "masculine"
-                          ? "مساعد AYXA Pro — رفيق التخطيط الذكي ✨"
-                          : "مساعدة AYXA Pro — رفيقة التخطيط الذكي ✨"
-                        : "AYXA Pro Helper — Executive AI Planner ✨"}
+                        ? "مساعدة AYXA Muse Pro — رفيقتكِ للتخطيط والتألق ✨"
+                        : "AYXA Muse Pro — Luxury AI Life & Glow Companion ✨"}
                     </span>
                   </h3>
                   <p className="text-[11px] text-ink-light mt-0.5 leading-relaxed truncate">

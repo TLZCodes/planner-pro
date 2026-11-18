@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { MobileShell } from "@/components/MobileShell";
 import { useLang } from "@/lib/i18n";
-import { useApp } from "@/lib/store";
+import { useApp, type AiSettings } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
   type AiProposal,
@@ -52,16 +52,27 @@ import { AiSettingsModal } from "@/components/ai/AiSettingsModal";
 export const Route = createFileRoute("/ai")({
   head: () => ({
     meta: [
-      { title: "AYXA Pro Helper ✨ — Executive AI Planning Helper" },
+      { title: "AYXA Muse Pro ✨ — Luxury AI Planning & Glow Companion" },
       {
         name: "description",
         content:
-          "AYXA Pro Helper — Executive AI planning helper for Muslim women and ambitious planners: gentle day planning, night shift schedules, goal breakdown, and study routines.",
+          "AYXA Muse Pro — Luxury AI planning companion for aesthetic, mindful women: gentle day planning, That Girl routines, goal breakdown, and Barakah schedules.",
       },
     ],
   }),
   component: AiScreen,
 });
+
+const FEMININE_VIBE_MODES: Array<{
+  id: AiSettings["tone"];
+  emoji: string;
+  labelEn: string;
+  labelAr: string;
+}> = [
+  { id: "gentle", emoji: "🌸", labelEn: "Soft Glow", labelAr: "نعومة وهدوء" },
+  { id: "action", emoji: "👑", labelEn: "That Girl Pro", labelAr: "طموح وإنجاز" },
+  { id: "barakah", emoji: "🌙", labelEn: "Barakah Soul", labelAr: "بركة وسكينة" },
+];
 
 function AiScreen() {
   const navigate = useNavigate();
@@ -75,10 +86,11 @@ function AiScreen() {
     updateAiContextConsent,
     revokeAiContextConsent,
     useAiCredit,
-    setAiPersona,
+    updateAiSettings,
   } = useApp();
   const isAr = lang === "ar";
-  const isFeminine = (state.aiPersona || "feminine") === "feminine";
+  const activeTone: AiSettings["tone"] = state.aiSettings?.tone || "barakah";
+  const activeLevel: AiSettings["level"] = state.aiSettings?.level || "balanced";
 
   // Navigation back handler
   const handleBack = () => {
@@ -129,7 +141,7 @@ function AiScreen() {
     proposals: [],
   });
 
-  // Offline & Provider Status Detection
+  // Offline Detection
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== "undefined" ? navigator.onLine : true,
   );
@@ -181,8 +193,8 @@ function AiScreen() {
       const derivedTitle = firstUserMsg
         ? firstUserMsg.content.slice(0, 32)
         : isAr
-          ? "محادثة AYXA Pro"
-          : "AYXA Pro Session";
+          ? "جلسة تخطيط AYXA Pro"
+          : "AYXA Muse Pro Session";
 
       saveAiConversation({
         id: activeConvId,
@@ -214,7 +226,7 @@ function AiScreen() {
     const trimmed = text.trim();
     if (!trimmed || isGenerating) return;
 
-    const cost = state.aiSettings?.level === "deep" ? 2 : 1;
+    const cost = activeLevel === "deep" ? 2 : 1;
     const currentCredits = typeof state.aiCredits === "number" ? state.aiCredits : 50;
     if (currentCredits < cost) {
       setShowCreditsModal(true);
@@ -265,9 +277,9 @@ function AiScreen() {
           role: m.role,
           content: m.content,
         })),
-        persona: state.aiPersona || "feminine",
-        level: state.aiSettings?.level || "balanced",
-        tone: state.aiSettings?.tone || "barakah",
+        persona: "feminine",
+        level: activeLevel,
+        tone: activeTone,
         model: state.aiSettings?.model || COARENA_DEFAULT_MODEL,
         contextSummary: contextSummaryText,
         signal: controller.signal,
@@ -309,21 +321,20 @@ function AiScreen() {
         );
       } else {
         const msg = err?.message || "";
-        // Remove empty placeholder on error
         setMessages((prev) =>
           prev.filter((m) => !(m.id === assistantMsgId && !m.content.trim()))
         );
         if (msg.includes("429")) {
           setCustomError(
             isAr
-              ? "طلبات متتالية — يرجى الانتظار لحظات بسيطة والمحاولة مجدداً."
-              : "Too many requests — please wait a moment and try again.",
+              ? "طلبات متتالية — يرجى الانتظار لحظات بسيطة والمحاولة مجدداً 🌸"
+              : "Too many requests — please wait a moment and try again 🌸",
           );
         } else {
           setCustomError(
             isAr
-              ? "تعذر الاتصال بمحرك AYXA Pro Helper حالياً — يرجى التحقق من اتصالك بالإنترنت والمحاولة مجدداً."
-              : "Unable to reach AYXA Pro Helper right now — please check your internet connection and try again.",
+              ? "تعذر الاتصال بـ AYXA Muse Pro حالياً — يرجى التحقق من اتصالكِ بالإنترنت والمحاولة مجدداً."
+              : "Unable to reach AYXA Muse Pro right now — please check your internet connection and try again.",
           );
         }
       }
@@ -336,7 +347,6 @@ function AiScreen() {
   // Rate an assistant reply via POST https://coarena.ai/api/v1/feedback
   const handleRateReply = async (message: AiMessage, rating: "good" | "bad") => {
     const reqId = message.requestId || message.id;
-    // Optimistically update message rating
     setMessages((prev) =>
       prev.map((m) =>
         m.id === message.id ? { ...m, feedbackRating: rating } : m
@@ -399,60 +409,67 @@ function AiScreen() {
   const handleOpenMessageProposalsReview = (proposals: AiProposal[]) => {
     setReviewSheetConfig({
       isOpen: true,
-      title: isAr ? "مراجعة مقترحات الخطة 📋" : "Review Plan Proposals 📋",
+      title: isAr ? "مراجعة مقترحات خطتكِ 📋" : "Review Your Plan Proposals 📋",
       sourceType: "ai_suggestion",
       proposals,
     });
   };
 
+  const activeVibeObj =
+    FEMININE_VIBE_MODES.find((v) => v.id === activeTone) || FEMININE_VIBE_MODES[2];
+
   return (
     <MobileShell hideFooter>
       <div className="flex h-screen max-h-screen flex-col bg-canvas text-ink overflow-hidden">
-        {/* Compact Calm Header */}
-        <header className="flex items-center justify-between border-b border-border/80 bg-card px-4 py-3 shadow-sm shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
+        {/* Luxury Aesthetic Header */}
+        <header className="flex items-center justify-between border-b border-pink-200/50 dark:border-pink-900/40 bg-card/95 backdrop-blur-md px-4 py-3 shadow-2xs shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             <button
               onClick={handleBack}
               aria-label="Back"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 border border-border/80 text-ink shadow-sm hover:bg-surface active:scale-90 transition-transform shrink-0 cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 border border-pink-200/60 dark:border-pink-800/50 text-ink shadow-2xs hover:border-hotpink active:scale-90 transition-all shrink-0 cursor-pointer"
             >
-              <ArrowLeft className="h-5 w-5 rtl:rotate-180 transition-transform" />
+              <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
             </button>
 
-            <span className="grad-theme flex h-9 w-9 items-center justify-center rounded-2xl text-base shadow-rose shrink-0">
-              ✨
-            </span>
+            <div className="relative shrink-0">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-600 text-lg text-white shadow-rose">
+                🌸
+              </span>
+              <span className="absolute -bottom-0.5 -end-0.5 h-3 w-3 rounded-full border-2 border-card bg-emerald-400" />
+            </div>
 
             <div className="min-w-0">
-              <h1 className="font-display text-base font-bold text-ink leading-tight truncate">
-                {isAr
-                  ? isFeminine
-                    ? "مساعدة AYXA Pro ✨"
-                    : "مساعد AYXA Pro ✨"
-                  : "AYXA Pro Helper ✨"}
-              </h1>
-              <p className="text-[11px] font-semibold text-ink-light truncate mt-0.5">
+              <div className="flex items-center gap-1.5">
+                <h1 className="font-display text-sm sm:text-base font-extrabold text-ink leading-tight truncate">
+                  {isAr ? "مساعدة AYXA Muse Pro" : "AYXA Muse Pro"}
+                </h1>
+                <span className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-500/20 to-fuchsia-500/20 border border-pink-400/40 px-2 py-0.5 text-[9px] font-extrabold text-hotpink uppercase tracking-wider shrink-0">
+                  PRO ✨
+                </span>
+              </div>
+              <p className="text-[11px] font-medium text-ink-light truncate mt-0.5">
                 {isGenerating
-                  ? t("thinking")
+                  ? isAr
+                    ? "تكتب لكِ خطتكِ بكل حب..."
+                    : "Crafting your plan with love..."
                   : isAr
-                    ? isFeminine
-                      ? "مساعدتكِ الذكية الاحترافية لتصبح خطوتكِ القادمة أوضح."
-                      : "مساعدك الذكي الاحترافي لتصبح خطوتك القادمة أوضح."
-                    : "Executive Pro AI helper to make your next step clearer."}
+                    ? "رفيقتكِ الذكية للتخطيط، الإنجاز، والأنوثة الواعية ♡"
+                    : "Your luxury AI life, routine & glow companion ♡"}
               </p>
             </div>
           </div>
 
           {/* Header Action Icons */}
           <div className="flex items-center gap-1.5 shrink-0">
-            {/* Quick Credits Display */}
+            {/* Glow Credits Pill */}
             <button
               type="button"
               onClick={() => setShowCreditsModal(true)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-bold hover:bg-amber-500/20 active:scale-95 transition-all cursor-pointer"
-              title={isAr ? "رصيد نقاط الذكاء الاصطناعي" : "AI Credits"}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-pink-500/15 to-amber-500/15 border border-pink-300/60 dark:border-pink-800/60 text-hotpink text-xs font-extrabold hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              title={isAr ? "رصيد نقاطكِ" : "Your Glow Credits"}
             >
-              <Coins size={13} className="text-amber-500" />
+              <Sparkles size={12} className="text-hotpink" />
               <span>{state.aiCredits ?? 50}</span>
             </button>
 
@@ -461,24 +478,25 @@ function AiScreen() {
               type="button"
               onClick={() => setShowContextModal(true)}
               aria-label={isAr ? "صلاحيات سياق التخطيط" : "Planner Context Settings"}
-              className={`relative flex h-9 w-9 items-center justify-center rounded-full border transition-colors cursor-pointer ${
+              className={cn(
+                "relative flex h-8 w-8 items-center justify-center rounded-full border transition-all cursor-pointer",
                 contextScope.granted
-                  ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600"
-                  : "border-border/80 bg-surface/80 text-ink-light hover:text-ink"
-              }`}
+                  ? "border-emerald-400/70 bg-emerald-500/15 text-emerald-500"
+                  : "border-pink-200/60 dark:border-pink-900/50 bg-surface/80 text-ink-light hover:text-hotpink"
+              )}
               title={
                 contextScope.granted
                   ? isAr
                     ? "سياق التخطيط مفعّل"
                     : "Planner context active"
                   : isAr
-                    ? "السياق الشخصي غير مشارك (افتراضي)"
-                    : "No personal context shared (default)"
+                    ? "الخصوصية محمية (السياق مغلق)"
+                    : "Privacy guarded (context closed)"
               }
             >
-              <Shield size={16} />
+              <Shield size={15} />
               {contextScope.granted && (
-                <span className="absolute top-1.5 end-1.5 h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="absolute top-1 end-1 h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               )}
             </button>
 
@@ -487,20 +505,20 @@ function AiScreen() {
               type="button"
               onClick={() => setShowDrawer(true)}
               aria-label={isAr ? "المحادثات السابقة" : "Saved conversations"}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-surface/80 text-ink-light hover:text-ink transition-colors cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-pink-200/60 dark:border-pink-900/50 bg-surface/80 text-ink-light hover:text-hotpink transition-colors cursor-pointer"
             >
-              <MessageSquare size={16} />
+              <MessageSquare size={15} />
             </button>
 
-            {/* AI Agent Settings Button */}
+            {/* AI Studio Settings Button */}
             <button
               type="button"
               onClick={() => setShowSettingsModal(true)}
-              aria-label={isAr ? "إعدادات المساعد وحماية الرصيد" : "AI Settings"}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-surface/80 text-ink-light hover:text-ink transition-colors cursor-pointer"
-              title={isAr ? "إعدادات AYXA Pro Helper ⚙️" : "AYXA Pro Helper Settings ⚙️"}
+              aria-label={isAr ? "إعدادات AYXA Muse Pro" : "AYXA Muse Pro Settings"}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-pink-200/60 dark:border-pink-900/50 bg-surface/80 text-ink-light hover:text-hotpink transition-colors cursor-pointer"
+              title={isAr ? "تخصيص الأسلوب والمحرك ⚙️" : "Customize Vibe & Engine ⚙️"}
             >
-              <Sliders size={16} />
+              <Sliders size={15} />
             </button>
 
             {/* New Conversation Button */}
@@ -508,162 +526,121 @@ function AiScreen() {
               type="button"
               onClick={handleNewConversation}
               aria-label={isAr ? "محادثة جديدة" : "New conversation"}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-hotpink text-white shadow-rose hover:opacity-90 transition-opacity cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-rose hover:opacity-90 active:scale-90 transition-all cursor-pointer"
             >
-              <Plus size={18} />
+              <Plus size={16} />
             </button>
           </div>
         </header>
 
-        {/* Persona Selector & Credits Balance Control Bar */}
-        <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-surface/50 px-4 py-2 shrink-0">
-          <div className="flex items-center gap-1 bg-canvas/80 p-0.5 rounded-full border border-border/80">
-            <button
-              type="button"
-              onClick={() => setAiPersona("feminine")}
-              className={cn(
-                "flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer",
-                isFeminine
-                  ? "bg-hotpink text-white shadow-rose"
-                  : "text-ink-light hover:text-ink",
-              )}
-            >
-              <span>🌸</span>
-              <span>{isAr ? "مساعدة AYXA Pro" : "AYXA Pro Helper (Sister)"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAiPersona("masculine")}
-              className={cn(
-                "flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer",
-                !isFeminine
-                  ? "bg-slate-700 text-white shadow-sm dark:bg-slate-600"
-                  : "text-ink-light hover:text-ink",
-              )}
-            >
-              <span>🌿</span>
-              <span>{isAr ? "مساعد AYXA Pro" : "AYXA Pro Helper (Brother)"}</span>
-            </button>
-          </div>
-
-          {/* Credits Recharge Link */}
-          <button
-            type="button"
-            onClick={() => setShowCreditsModal(true)}
-            className="flex items-center gap-1 text-xs font-bold text-hotpink hover:underline active:scale-95 transition-transform cursor-pointer"
-          >
-            <span>{isAr ? "شحن نقاط ⚡" : "Recharge ⚡"}</span>
-          </button>
-        </div>
-
-        {/* Active AI Status Pill */}
-        {isOnline && !customError && (
-          <div className="mx-4 mt-2.5 rounded-2xl border border-pink-200/80 dark:border-pink-900/50 bg-gradient-to-r from-pink-50/70 via-rose-50/40 to-pink-50/70 dark:bg-card px-3.5 py-2 text-xs text-ink flex items-center justify-between shadow-2xs animate-fade-in shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-semibold text-ink text-[11px]">
-                {isAr
-                  ? isFeminine
-                    ? "مساعدة AYXA Pro نشطة وجاهزة لمساعدتكِ ✨"
-                    : "مساعد AYXA Pro نشط وجاهز لمساعدتك ✨"
-                  : "AYXA Pro Helper Active & Ready ✨"}
-              </span>
+        {/* Feminine Aesthetic Vibe Selector Ribbon (100% Girls Aesthetic — Soft Glow / That Girl Pro / Barakah Soul) */}
+        <div className="border-b border-pink-200/40 dark:border-pink-900/30 bg-surface/40 backdrop-blur-xs px-4 py-2 shrink-0">
+          <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto">
+            <div className="grid grid-cols-3 gap-1.5 flex-1 bg-canvas/90 p-1 rounded-2xl border border-pink-200/60 dark:border-pink-900/50">
+              {FEMININE_VIBE_MODES.map((vibe) => {
+                const isSelected = activeTone === vibe.id;
+                return (
+                  <button
+                    key={vibe.id}
+                    type="button"
+                    onClick={() => updateAiSettings({ tone: vibe.id })}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer truncate",
+                      isSelected
+                        ? "bg-gradient-to-r from-pink-500 via-rose-500 to-fuchsia-600 text-white shadow-rose"
+                        : "text-ink-light hover:text-ink hover:bg-surface/60"
+                    )}
+                  >
+                    <span className="text-xs shrink-0">{vibe.emoji}</span>
+                    <span className="truncate">{isAr ? vibe.labelAr : vibe.labelEn}</span>
+                  </button>
+                );
+              })}
             </div>
+
             <button
               type="button"
               onClick={() => setShowSettingsModal(true)}
-              className="text-[10px] font-bold text-hotpink bg-white/90 dark:bg-card/90 px-2.5 py-0.5 rounded-full border border-pink-200/70 dark:border-pink-800/40 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-2xs flex items-center gap-1"
-              title={isAr ? "اضغط لتعديل مستوى الاستهلاك أو المحرك" : "Click to adjust level or model"}
+              className="shrink-0 flex items-center gap-1 rounded-2xl border border-pink-300/50 dark:border-pink-800/50 bg-canvas/90 px-2.5 py-2 text-[10px] font-extrabold text-hotpink hover:border-hotpink transition-all cursor-pointer"
+              title={isAr ? "عمق التخطيط" : "Planning Depth"}
             >
               <span>
-                {state.aiSettings?.level === "saver"
-                  ? isAr ? "💡 اقتصادي (1 نقطة)" : "💡 Saver (1 pt)"
-                  : state.aiSettings?.level === "deep"
-                    ? isAr ? "🚀 مفصّل (2 نقطة)" : "🚀 Pro (2 pts)"
-                    : isAr ? "⚖️ متوازن (1 نقطة)" : "⚖️ Balanced (1 pt)"}
+                {activeLevel === "saver"
+                  ? isAr
+                    ? "✨ سريع"
+                    : "✨ Spark"
+                  : activeLevel === "deep"
+                    ? isAr
+                      ? "👑 ملكي"
+                      : "👑 Royal"
+                    : isAr
+                      ? "🌷 متوازن"
+                      : "🌷 Glow"}
               </span>
             </button>
           </div>
-        )}
+        </div>
 
+        {/* Offline Banner */}
         {!isOnline && (
-          <div className="mx-4 mt-2.5 rounded-2xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/60 dark:bg-amber-950/20 px-3.5 py-2 text-xs text-ink flex items-center gap-2 shadow-2xs shrink-0">
-            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-            <p className="text-[11px] text-amber-800 dark:text-amber-300">
+          <div className="mx-4 mt-2.5 rounded-2xl border border-amber-400/40 bg-amber-500/10 px-3.5 py-2 text-xs text-ink flex items-center gap-2 shrink-0">
+            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+            <p className="text-[11px] text-amber-700 dark:text-amber-200">
               {isAr
-                ? "لا يوجد اتصال بالإنترنت — يمكنكِ استخدام قوالب التخطيط المدمجة بدون انقطاع."
+                ? "لا يوجد اتصال بالإنترنت — يمكنكِ استخدام قوالب التخطيط الجاهزة بدون انقطاع."
                 : "Offline mode — you can continue using built-in planning templates seamlessly."}
             </p>
           </div>
         )}
 
-        {customError && (
-          <div className="mx-4 mt-2.5 rounded-2xl border border-rose-200/80 dark:border-rose-900/50 bg-rose-50/60 dark:bg-rose-950/20 px-3.5 py-2 text-xs text-ink flex items-start gap-2 shadow-2xs shrink-0">
-            <AlertTriangle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-[11px] text-rose-800 dark:text-rose-300">{customError}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Scrollable Conversation Area */}
+        {/* Scrollable Conversation Area (Custom sleek scrollbar — no ugly white bar) */}
         <div
           ref={chatScrollRef}
-          className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+          className="flex-1 overflow-y-auto px-4 py-4 space-y-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-pink-500/25 hover:[&::-webkit-scrollbar-thumb]:bg-pink-500/40"
         >
           {/* Welcome Screen & Starter Prompts (When messages is empty) */}
           {messages.length === 0 && (
-            <div className="space-y-4 py-2 animate-fade-in">
-              {/* Islamic Spiritual Barakah Banner Card */}
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-pink-500/15 via-rose-500/10 to-amber-500/15 border border-pink-300/70 dark:border-pink-900/60 p-5 text-center shadow-rose-sm">
-                <div className="flex items-center justify-center gap-1.5 mb-1 text-sm">
-                  <span>✨</span>
-                  <span className="text-2xl">{isFeminine ? "🌸" : "🌿"}</span>
-                  <span>✨</span>
+            <div className="space-y-5 py-1 max-w-2xl mx-auto animate-fade-in">
+              {/* Luxury Feminine Hero Card */}
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-pink-500/15 via-rose-500/10 to-fuchsia-500/15 dark:from-pink-950/50 dark:via-rose-950/35 dark:to-purple-950/45 border border-pink-300/60 dark:border-pink-800/50 p-5 text-center shadow-rose-sm">
+                <div className="mx-auto mb-2.5 flex h-14 w-14 items-center justify-center rounded-3xl bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-600 text-2xl text-white shadow-rose">
+                  {activeVibeObj.emoji}
                 </div>
                 <p className="font-script text-2xl text-hotpink leading-snug tracking-wide">
                   {t("bismillahHelp")}
                 </p>
-                <p className="mt-1 text-[12px] font-medium text-ink-light max-w-sm mx-auto leading-relaxed">
+                <h2 className="mt-1 font-display text-sm font-extrabold text-ink">
                   {isAr
-                    ? isFeminine
-                      ? "مرحباً بكِ في AYXA Pro Helper — مساعدتكِ الذكية الاحترافية لتنظيم يومكِ بعقلية البركة، تيسير الخطوات القادمة، وبناء روتين متوازن يجمع بين الطمأنينة والإنجاز ♡"
-                      : "مرحباً بك في AYXA Pro Helper — مساعدك الذكي الاحترافي لتنظيم يومك بعقلية البركة، تيسير الخطوات القادمة، وبناء روتين متوازن يجمع بين الطمأنينة والإنجاز ♡"
-                    : "Welcome to AYXA Pro Helper — your executive AI helper to clarify your next step with calm structure, mindful routines, and Barakah ♡"}
+                    ? "أهلاً بكِ في مساحة AYXA Muse Pro الخاصة بكِ ✨"
+                    : "Welcome to Your AYXA Muse Pro Sanctuary ✨"}
+                </h2>
+                <p className="mt-1.5 text-[12px] font-medium text-ink-light max-w-md mx-auto leading-relaxed">
+                  {isAr
+                    ? "صمّمي يومكِ بنعومة، قسّمي أهدافكِ الطموحة، ووازني بين دراستكِ، عنايتكِ بنفسكِ، وأوقات صلواتكِ بكل حب وجمال ♡"
+                    : "Design your dream routine, break down ambitious goals, and harmonize your studies, self-care, and prayer times with grace ♡"}
                 </p>
 
-                <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[10px] font-bold">
-                  <span className="bg-white/85 dark:bg-card/85 px-3 py-1 rounded-full border border-pink-200/70 dark:border-pink-800/50 shadow-2xs text-amber-700 dark:text-amber-300">
-                    🪙 {state.aiCredits ?? 50} {isAr ? "نقطة رصيد" : "credits"}
+                <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2 text-[10px] font-bold">
+                  <span className="bg-card/90 px-3 py-1 rounded-full border border-pink-300/50 dark:border-pink-800/50 text-hotpink">
+                    {activeVibeObj.emoji} {isAr ? activeVibeObj.labelAr : activeVibeObj.labelEn}
                   </span>
                   <button
                     type="button"
                     onClick={() => setShowSettingsModal(true)}
-                    className="bg-white/85 dark:bg-card/85 px-3 py-1 rounded-full border border-pink-200/70 dark:border-pink-800/50 shadow-2xs hover:text-hotpink transition-colors cursor-pointer"
+                    className="bg-card/90 px-3 py-1 rounded-full border border-pink-300/50 dark:border-pink-800/50 text-ink-light hover:text-hotpink transition-colors cursor-pointer"
                   >
-                    ⚙️{" "}
-                    {state.aiSettings?.level === "saver"
-                      ? isAr
-                        ? "نظام اقتصادي"
-                        : "Saver"
-                      : state.aiSettings?.level === "deep"
-                        ? isAr
-                          ? "نظام مفصل"
-                          : "Pro Deep"
-                        : isAr
-                          ? "نظام متوازن"
-                          : "Balanced"}
+                    ✨ {state.aiSettings?.model || COARENA_DEFAULT_MODEL}
                   </button>
                 </div>
               </div>
 
-              {/* Starter Prompts */}
-              <div className="space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-light flex items-center gap-1.5">
-                  <Sparkles size={12} className="text-hotpink" />
-                  {isAr ? "بدايات مقترحة:" : "Starter Prompts:"}
+              {/* Aesthetic Girl Starter Prompts */}
+              <div className="space-y-2.5">
+                <p className="text-[11px] font-extrabold uppercase tracking-wider text-hotpink flex items-center gap-1.5 px-1">
+                  <Sparkles size={13} />
+                  <span>{isAr ? "ابدئي تخطيطكِ الأنثوي بلمسة واحدة:" : " Curated For Your Glow:"}</span>
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {STARTER_PROMPTS.map((p) => {
                     const promptText = isAr ? p.ar : p.en;
                     return (
@@ -671,12 +648,12 @@ function AiScreen() {
                         key={p.id}
                         type="button"
                         onClick={() => void handleSend(promptText)}
-                        className="flex items-center justify-between text-start p-3 rounded-2xl border border-pink-200/80 dark:border-pink-900/60 bg-card hover:border-pink-400 hover:shadow-rose transition-all cursor-pointer group"
+                        className="flex items-center justify-between text-start p-3.5 rounded-2xl border border-pink-200/70 dark:border-pink-900/50 bg-card/90 hover:border-hotpink hover:bg-gradient-to-r hover:from-pink-500/10 hover:to-transparent transition-all cursor-pointer group shadow-2xs"
                       >
-                        <span className="text-xs font-semibold text-ink group-hover:text-hotpink transition-colors">
+                        <span className="text-xs font-bold text-ink group-hover:text-hotpink transition-colors">
                           {promptText}
                         </span>
-                        <span className="text-ink-light group-hover:text-hotpink text-xs rtl:rotate-180">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-pink-500/10 text-hotpink text-xs rtl:rotate-180 group-hover:bg-hotpink group-hover:text-white transition-all shrink-0 ms-2">
                           →
                         </span>
                       </button>
@@ -685,33 +662,35 @@ function AiScreen() {
                 </div>
               </div>
 
-              {/* Mindset & Life Routine Questions */}
-              <div className="space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-ink-light flex items-center gap-1.5">
+              {/* Feminine Mindset & Glow Topics */}
+              <div className="space-y-2.5">
+                <p className="text-[11px] font-extrabold uppercase tracking-wider text-ink-light flex items-center gap-1.5 px-1">
                   <Bookmark size={12} className="text-hotpink" />
-                  {isAr ? "أسئلة العقلية والروتين المتوازن:" : "Mindset & Daily Routine Topics:"}
+                  <span>
+                    {isAr ? "جلسات الإلهام والعناية الذاتية:" : "Self-Care, Barakah & Boss Girl Topics:"}
+                  </span>
                 </p>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {[
                     {
-                      ar: "كيف أعيش بعقلية البركة والإنتاجية الهادئة؟ 🌿",
-                      en: "How do I cultivate the Barakah Mindset? 🌿",
+                      ar: "كيف أعيش بعقلية البركة والإنتاجية الهادئة؟ 🌙",
+                      en: "How do I cultivate the Barakah Mindset? 🌙",
                     },
                     {
-                      ar: "اقترحي روتيناً صباحياً هادئاً قبل العمل ☕",
-                      en: "Suggest a calm morning routine before work ☕",
+                      ar: "رتّبي لي روتيناً صباحياً أنثوياً هادئاً قبل الدراسة أو العمل 🌸",
+                      en: "Design a soft, aesthetic morning routine before study/work 🌸",
                     },
                     {
-                      ar: "كيف أتغلب على التسويف دون قسوة على نفسي؟ 🌸",
-                      en: "How to overcome procrastination with self-compassion? 🌸",
+                      ar: "كيف أتغلب على التسويف والتشتت بلطف مع نفسي؟ 🌷",
+                      en: "Overcome procrastination with gentle self-compassion 🌷",
                     },
                     {
-                      ar: "كيف أنسق مهامي بين أوقات الصلوات الخمس؟ 🕌",
-                      en: "How to arrange my day between prayer times? 🕌",
+                      ar: "نسّقي جدول يومي بين أوقات الصلوات الخمس والعناية الذاتية 🕌",
+                      en: "Harmonize my daily schedule around the 5 prayers & self-care 🕌",
                     },
                     {
-                      ar: "أشعر بالتشتت والإرهاق، كيف أبدأ خطوة صغيرة؟ ✨",
-                      en: "I feel overwhelmed, how to take a tiny gentle step? ✨",
+                      ar: "خطة أسبوعية متكاملة للتركيز الدراسي وتحقيق أهدافي 👑",
+                      en: "Create a That Girl weekly study & goal focus plan 👑",
                     },
                   ].map((topic, i) => {
                     const text = isAr ? topic.ar : topic.en;
@@ -720,7 +699,7 @@ function AiScreen() {
                         key={i}
                         type="button"
                         onClick={() => void handleSend(text)}
-                        className="text-xs font-medium px-3 py-1.5 rounded-full border border-pink-200/90 dark:border-pink-900/60 bg-surface/70 hover:bg-card hover:border-hotpink hover:text-hotpink text-ink transition-all cursor-pointer shadow-2xs"
+                        className="text-xs font-semibold px-3.5 py-2 rounded-2xl border border-pink-200/70 dark:border-pink-900/50 bg-surface/60 hover:bg-card hover:border-hotpink hover:text-hotpink text-ink transition-all cursor-pointer shadow-2xs"
                       >
                         {text}
                       </button>
@@ -730,20 +709,22 @@ function AiScreen() {
               </div>
 
               {/* Collapsible Deterministic Built-in Templates Section */}
-              <div className="rounded-2xl border border-border/80 bg-surface/50 p-3.5 space-y-2.5">
+              <div className="rounded-3xl border border-pink-200/60 dark:border-pink-900/40 bg-card/70 p-4 space-y-2.5">
                 <button
                   type="button"
                   onClick={() => setTemplatesExpanded(!templatesExpanded)}
                   className="flex items-center justify-between w-full text-start cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <Bookmark size={14} className="text-purple-600 dark:text-purple-400" />
-                    <span className="text-xs font-bold text-ink">
-                      {isAr
-                        ? "قوالب التخطيط المدمجة (الجاهزة)"
-                        : "Built-in Templates (Deterministic)"}
+                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-pink-500/15 text-hotpink text-xs">
+                      🎀
                     </span>
-                    <span className="text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 font-bold px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-extrabold text-ink">
+                      {isAr
+                        ? "قوالب AYXA الجاهزة للتطبيق الفوري"
+                        : "Ready-to-Use AYXA Signature Templates"}
+                    </span>
+                    <span className="text-[10px] bg-pink-500/15 text-hotpink font-extrabold px-2 py-0.5 rounded-full">
                       {BUILT_IN_TEMPLATES.length}
                     </span>
                   </div>
@@ -755,17 +736,15 @@ function AiScreen() {
                     {BUILT_IN_TEMPLATES.map((tmpl) => (
                       <div
                         key={tmpl.id}
-                        className="rounded-2xl border border-border/80 bg-card p-3.5 space-y-2 shadow-sm"
+                        className="rounded-2xl border border-pink-200/60 dark:border-pink-900/40 bg-surface/60 p-3.5 space-y-2.5 shadow-2xs"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h4 className="text-xs font-bold text-ink">
-                              {isAr ? tmpl.titleAr : tmpl.titleEn}
-                            </h4>
-                            <p className="text-[11px] text-ink-light mt-0.5 leading-relaxed">
-                              {isAr ? tmpl.descAr : tmpl.descEn}
-                            </p>
-                          </div>
+                        <div>
+                          <h4 className="text-xs font-extrabold text-ink">
+                            {isAr ? tmpl.titleAr : tmpl.titleEn}
+                          </h4>
+                          <p className="text-[11px] text-ink-light mt-0.5 leading-relaxed">
+                            {isAr ? tmpl.descAr : tmpl.descEn}
+                          </p>
                         </div>
 
                         <div className="flex items-center gap-2 pt-2 border-t border-border/40">
@@ -780,10 +759,10 @@ function AiScreen() {
                           <button
                             type="button"
                             onClick={() => void handleSend(isAr ? tmpl.promptAr : tmpl.promptEn)}
-                            className="flex items-center gap-1 rounded-full bg-ghost px-3 py-1.5 text-xs font-bold text-ink hover:bg-surface transition-colors cursor-pointer"
+                            className="flex items-center gap-1 rounded-full bg-card border border-pink-200/60 dark:border-pink-800/50 px-3 py-1.5 text-xs font-bold text-ink hover:border-hotpink transition-colors cursor-pointer"
                           >
                             <Sparkles size={12} className="text-hotpink" />
-                            <span>{isAr ? "توسيع بالسؤال ✨" : "Ask AYXA Pro ✨"}</span>
+                            <span>{isAr ? "تخصيص مع AYXA ✨" : "Customize with AYXA ✨"}</span>
                           </button>
                         </div>
                       </div>
@@ -795,104 +774,116 @@ function AiScreen() {
           )}
 
           {/* Render Messages */}
-          {messages.map((m) => {
-            const rawText = m.content;
-            if (!rawText) return null;
+          <div className="space-y-4 max-w-2xl mx-auto">
+            {messages.map((m) => {
+              const rawText = m.content;
+              if (!rawText) return null;
 
-            const isUser = m.role === "user";
-            const displayText = formatPlanTextWithoutRawJson(rawText);
-            const proposals = !isUser
-              ? m.proposals && m.proposals.length > 0
-                ? m.proposals
-                : extractProposalsFromText(rawText, state)
-              : [];
+              const isUser = m.role === "user";
+              const displayText = formatPlanTextWithoutRawJson(rawText);
+              const proposals = !isUser
+                ? m.proposals && m.proposals.length > 0
+                  ? m.proposals
+                  : extractProposalsFromText(rawText, state)
+                : [];
 
-            return (
-              <div
-                key={m.id}
-                className={`flex gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}
-              >
-                {!isUser && (
-                  <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-sm shadow-sm">
-                    {isFeminine ? "🌸" : "🌿"}
-                  </span>
-                )}
-
+              return (
                 <div
-                  className={`relative max-w-[85%] rounded-3xl p-3.5 text-sm ${
-                    isUser
-                      ? "grad-theme rounded-br-sm text-white shadow-rose font-medium"
-                      : "rounded-bl-sm border border-pink-200/70 dark:border-pink-900/50 bg-card text-ink shadow-sm"
-                  }`}
+                  key={m.id}
+                  className={cn(
+                    "flex gap-2.5 animate-fade-in",
+                    isUser ? "justify-end" : "justify-start"
+                  )}
                 >
-                  <div className="prose prose-sm max-w-none text-inherit leading-relaxed [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:ps-5 [&_p]:my-1 [&_strong]:font-bold [&_ul]:my-2 [&_ul]:list-disc [&_ul]:ps-5">
-                    <ReactMarkdown>{displayText}</ReactMarkdown>
-                  </div>
-
-                  {/* Proposals Preview Card (If model returned a plan) */}
-                  {!isUser && proposals.length > 0 && (
-                    <AiProposalCard
-                      proposals={proposals}
-                      onReview={() => handleOpenMessageProposalsReview(proposals)}
-                    />
+                  {!isUser && (
+                    <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-600 text-sm text-white shadow-rose">
+                      🌸
+                    </span>
                   )}
 
-                  {/* Assistant Message Actions (Signature, Feedback Rating & Copy) */}
-                  {!isUser && (
-                    <div className="mt-2.5 flex items-center justify-between border-t border-border/40 pt-2 text-[10px] text-ink-light gap-2">
-                      <span className="font-bold text-ink-light truncate">
-                        {isAr
-                          ? isFeminine
-                            ? "مساعدة AYXA Pro ✨"
-                            : "مساعد AYXA Pro ✨"
-                          : "AYXA Pro Helper ✨"}
-                      </span>
+                  <div
+                    className={cn(
+                      "relative max-w-[88%] sm:max-w-[82%] rounded-3xl p-4 text-sm transition-all",
+                      isUser
+                        ? "bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-600 rounded-br-xs text-white shadow-rose font-medium"
+                        : "rounded-bl-xs border border-pink-200/80 dark:border-pink-800/50 bg-card/95 text-ink shadow-md"
+                    )}
+                  >
+                    {/* Top Muse Badge inside Assistant Bubble */}
+                    {!isUser && (
+                      <div className="mb-2 flex items-center justify-between border-b border-pink-200/40 dark:border-pink-900/40 pb-1.5">
+                        <span className="text-[11px] font-extrabold text-hotpink flex items-center gap-1">
+                          <span>✨ AYXA Muse Pro</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-ink-light bg-surface/90 px-2 py-0.5 rounded-full border border-pink-200/50 dark:border-pink-900/40">
+                          {activeVibeObj.emoji} {isAr ? activeVibeObj.labelAr : activeVibeObj.labelEn}
+                        </span>
+                      </div>
+                    )}
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        {/* Coarena Reply Rating Buttons (POST /api/v1/feedback) */}
-                        <div className="flex items-center gap-1 bg-surface/80 rounded-full px-1.5 py-0.5 border border-border/60">
-                          <button
-                            type="button"
-                            onClick={() => void handleRateReply(m, "good")}
-                            title={isAr ? "رد مفيد" : "Helpful reply"}
-                            className={cn(
-                              "p-1 rounded-full transition-colors cursor-pointer",
-                              m.feedbackRating === "good"
-                                ? "text-emerald-600 bg-emerald-100/80 dark:bg-emerald-950/60"
-                                : "text-ink-light hover:text-emerald-600"
+                    <div className="prose prose-sm max-w-none text-inherit leading-relaxed [&_li]:my-1 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:ps-5 [&_p]:my-1.5 [&_strong]:font-extrabold [&_strong]:text-hotpink [&_ul]:my-2 [&_ul]:list-disc [&_ul]:ps-5 [&_ul]:marker:text-hotpink">
+                      <ReactMarkdown>{displayText}</ReactMarkdown>
+                    </div>
+
+                    {/* Proposals Preview Card (If model returned a plan) */}
+                    {!isUser && proposals.length > 0 && (
+                      <AiProposalCard
+                        proposals={proposals}
+                        onReview={() => handleOpenMessageProposalsReview(proposals)}
+                      />
+                    )}
+
+                    {/* Assistant Message Actions (Feedback Rating & Copy) */}
+                    {!isUser && (
+                      <div className="mt-3 flex items-center justify-between border-t border-pink-200/40 dark:border-pink-900/40 pt-2 text-[10px] text-ink-light gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-ink-light font-semibold">
+                            {isAr ? "تقييم الرد:" : "Rate reply:"}
+                          </span>
+                          <div className="flex items-center gap-1 bg-surface/90 rounded-full px-1.5 py-0.5 border border-pink-200/50 dark:border-pink-900/40">
+                            <button
+                              type="button"
+                              onClick={() => void handleRateReply(m, "good")}
+                              title={isAr ? "رد رائع ومفيد" : "Love this reply"}
+                              className={cn(
+                                "p-1 rounded-full transition-colors cursor-pointer",
+                                m.feedbackRating === "good"
+                                  ? "text-hotpink bg-pink-500/20"
+                                  : "text-ink-light hover:text-hotpink"
+                              )}
+                            >
+                              <ThumbsUp size={11} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleRateReply(m, "bad")}
+                              title={isAr ? "يحتاج تحسين" : "Needs improvement"}
+                              className={cn(
+                                "p-1 rounded-full transition-colors cursor-pointer",
+                                m.feedbackRating === "bad"
+                                  ? "text-rose-500 bg-rose-500/20"
+                                  : "text-ink-light hover:text-rose-500"
+                              )}
+                            >
+                              <ThumbsDown size={11} />
+                            </button>
+                            {ratingToastId === m.id && (
+                              <span className="text-[9px] font-extrabold text-hotpink px-1">
+                                {isAr ? "شكراً لكِ ♡" : "Saved ♡"}
+                              </span>
                             )}
-                          >
-                            <ThumbsUp size={11} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleRateReply(m, "bad")}
-                            title={isAr ? "رد غير دقيق" : "Needs improvement"}
-                            className={cn(
-                              "p-1 rounded-full transition-colors cursor-pointer",
-                              m.feedbackRating === "bad"
-                                ? "text-rose-600 bg-rose-100/80 dark:bg-rose-950/60"
-                                : "text-ink-light hover:text-rose-600"
-                            )}
-                          >
-                            <ThumbsDown size={11} />
-                          </button>
-                          {ratingToastId === m.id && (
-                            <span className="text-[9px] font-bold text-emerald-600 px-1">
-                              {isAr ? "تم التقييم ✓" : "Rated ✓"}
-                            </span>
-                          )}
+                          </div>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => handleCopy(m.id, displayText)}
-                          className="flex items-center gap-1 font-semibold hover:text-hotpink transition-colors cursor-pointer"
+                          className="flex items-center gap-1 font-bold text-ink-light hover:text-hotpink transition-colors cursor-pointer px-2 py-0.5 rounded-full hover:bg-surface"
                         >
                           {copiedId === m.id ? (
                             <>
-                              <Check size={12} className="text-emerald-600" />
-                              <span className="text-emerald-600">{isAr ? "تم النسخ" : "Copied"}</span>
+                              <Check size={12} className="text-emerald-500" />
+                              <span className="text-emerald-500">{isAr ? "تم النسخ" : "Copied"}</span>
                             </>
                           ) : (
                             <>
@@ -902,132 +893,91 @@ function AiScreen() {
                           )}
                         </button>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Active Generation Indicator */}
+            {isGenerating && (
+              <div className="flex gap-2.5 items-center animate-fade-in">
+                <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-600 text-sm text-white shadow-rose">
+                  🌸
+                </span>
+                <div className="flex items-center gap-2 rounded-full bg-card px-4 py-2.5 border border-pink-300/60 dark:border-pink-800/50 shadow-rose-sm text-xs font-bold text-hotpink">
+                  <span className="h-2 w-2 rounded-full bg-hotpink animate-ping" />
+                  <span>
+                    {isAr
+                      ? "AYXA Muse Pro تنسّق إجابتكِ بكل حب..."
+                      : "AYXA Muse Pro is curating your plan..."}
+                  </span>
                 </div>
               </div>
-            );
-          })}
+            )}
 
-          {/* Active Generation Indicator */}
-          {isGenerating && (
-            <div className="flex gap-2.5 items-center">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-surface text-sm">
-                {isFeminine ? "🌸" : "🌿"}
-              </span>
-              <div className="flex items-center gap-1.5 rounded-full bg-card px-4 py-2.5 border border-pink-200/70 dark:border-pink-900/50 shadow-sm text-xs font-semibold text-ink-light">
-                <span className="h-2 w-2 rounded-full bg-hotpink animate-ping" />
-                <span>
-                  {isAr
-                    ? "مساعدة AYXA Pro تحلل وتصوغ الخطة..."
-                    : "AYXA Pro Helper is thinking & drafting..."}
-                </span>
+            {/* Error Message with Clear Retry */}
+            {customError && (
+              <div className="rounded-3xl bg-rose-500/10 border border-rose-400/30 p-4 text-center text-xs text-rose-600 dark:text-rose-300 space-y-2.5">
+                <p className="leading-relaxed font-semibold">{customError}</p>
+                {lastSubmittedText && (
+                  <button
+                    type="button"
+                    onClick={() => void handleSend(lastSubmittedText)}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-600 text-white px-5 py-2 text-xs font-bold shadow-rose active:scale-95 transition-transform cursor-pointer"
+                  >
+                    <RefreshCw size={12} />
+                    <span>{isAr ? "إعادة المحاولة ✨" : "Try Again ✨"}</span>
+                  </button>
+                )}
               </div>
-            </div>
-          )}
-
-          {/* Error Message with Clear Retry */}
-          {customError && (
-            <div className="rounded-2xl bg-danger/10 border border-danger/20 p-3.5 text-center text-xs text-danger space-y-2">
-              <p className="leading-relaxed">{customError}</p>
-              {lastSubmittedText && (
-                <button
-                  type="button"
-                  onClick={() => void handleSend(lastSubmittedText)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-danger text-white px-4 py-1.5 text-xs font-bold shadow-sm active:scale-95 transition-transform cursor-pointer"
-                >
-                  <RefreshCw size={12} />
-                  <span>{isAr ? "إعادة المحاولة" : "Retry"}</span>
-                </button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Persistent Accessible Composer */}
-        <div className="border-t border-border/80 bg-card px-4 pt-3 pb-[calc(80px+env(safe-area-inset-bottom,12px))] shrink-0">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void handleSend(input);
-            }}
-            className="flex items-center gap-2 rounded-full border-2 border-pink-200/80 dark:border-pink-900/70 bg-canvas px-4 py-1.5 focus-within:border-hotpink shadow-sm transition-all"
-          >
-            <input
-              value={input}
-              dir={dir}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={
-                isAr
-                  ? "اسألي مساعدة AYXA Pro عن أي شيء..."
-                  : "Ask AYXA Pro Helper anything..."
-              }
-              className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-light/70 py-1.5"
-            />
+        {/* Luxury Glassmorphic Composer (Clean padding — no dead bottom gap) */}
+        <div className="border-t border-pink-200/50 dark:border-pink-900/40 bg-card/95 backdrop-blur-md px-4 pt-3 pb-[max(14px,env(safe-area-inset-bottom,14px))] shrink-0">
+          <div className="max-w-2xl mx-auto">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleSend(input);
+              }}
+              className="flex items-center gap-2 rounded-full border-2 border-pink-300/70 dark:border-pink-800/60 bg-canvas px-4 py-1.5 focus-within:border-hotpink focus-within:shadow-rose-sm transition-all"
+            >
+              <input
+                value={input}
+                dir={dir}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={
+                  isAr
+                    ? "اسألي AYXA Muse Pro عن يومكِ، أهدافكِ، أو روتينكِ..."
+                    : "Ask AYXA Muse Pro about your day, goals, or glow routine..."
+                }
+                className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-light/65 py-1.5"
+              />
 
-            {/* Stop Generation or Send Button */}
-            {isGenerating ? (
-              <button
-                type="button"
-                onClick={stopGeneration}
-                aria-label={isAr ? "إيقاف التوليد" : "Stop generation"}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-danger text-white shadow-sm hover:opacity-90 active:scale-90 transition-transform cursor-pointer"
-              >
-                <Square size={14} fill="currentColor" />
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={!input.trim()}
-                aria-label={isAr ? "إرسال" : "Send"}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-hotpink disabled:opacity-40 hover:bg-surface active:scale-90 transition-transform cursor-pointer"
-              >
-                <SendHorizontal size={20} className="flip-x" />
-              </button>
-            )}
-          </form>
-
-          {/* Minimal Safe Privacy & Zero-XP Note + Quick Credits Top-up */}
-          <div className="mt-2 flex items-center justify-between text-[10px] text-ink-light px-2">
-            <span>
-              {contextScope.granted
-                ? isAr
-                  ? "🔒 السياق مفعّل بنطاق محدد"
-                  : "🔒 Defined context enabled"
-                : isAr
-                  ? "🔒 سياق التخطيط الشخصي مغلق"
-                  : "🔒 Personal context closed"}
-            </span>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowSettingsModal(true)}
-                className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100/80 dark:bg-pink-950/60 text-hotpink hover:underline transition-all cursor-pointer"
-                title={isAr ? "تغيير مستوى الاستهلاك" : "Change level"}
-              >
-                {state.aiSettings?.level === "saver"
-                  ? isAr ? "💡 اقتصادي" : "💡 Saver"
-                  : state.aiSettings?.level === "deep"
-                    ? isAr ? "🚀 مفصّل" : "🚀 Pro"
-                    : isAr ? "⚖️ متوازن" : "⚖️ Balanced"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowCreditsModal(true)}
-                className="flex items-center gap-1 font-bold text-amber-700 dark:text-amber-300 hover:text-amber-600 transition-colors cursor-pointer"
-              >
-                <Coins size={11} className="text-amber-500" />
-                <span>
-                  {state.aiCredits ?? 50} {isAr ? "نقطة" : "pts"}
-                </span>
-              </button>
-
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                {isAr ? "0 XP للإضافة" : "0 XP"}
-              </span>
-            </div>
+              {/* Stop Generation or Glowing Send Button */}
+              {isGenerating ? (
+                <button
+                  type="button"
+                  onClick={stopGeneration}
+                  aria-label={isAr ? "إيقاف التوليد" : "Stop generation"}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm hover:opacity-90 active:scale-90 transition-transform cursor-pointer shrink-0"
+                >
+                  <Square size={13} fill="currentColor" />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!input.trim()}
+                  aria-label={isAr ? "إرسال" : "Send"}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-600 text-white shadow-rose disabled:opacity-35 hover:scale-105 active:scale-90 transition-all cursor-pointer shrink-0"
+                >
+                  <SendHorizontal size={16} className="flip-x" />
+                </button>
+              )}
+            </form>
           </div>
         </div>
 

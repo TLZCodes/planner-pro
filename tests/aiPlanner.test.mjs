@@ -392,21 +392,20 @@ test("AI Planner — Normalization & Conversation Persistence", () => {
   assert.equal(normalized.messages[2].proposals[0].title, "Morning walk");
 });
 
-test("AI Planner — Coarena API Configuration, gpt-6-luna Default & AYXA Pro Helper Identity", () => {
+test("AI Planner — Coarena API Configuration, gpt-6-luna Default & AYXA Muse Pro Identity", () => {
   assert.equal(COARENA_OPENAI_BASE_URL, "https://coarena.ai/api/v1");
   assert.equal(COARENA_ANTHROPIC_BASE_URL, "https://coarena.ai/api");
   assert.equal(COARENA_API_KEY, "coa_2a4a92f4d109fd9ea72e9e2406545c1c");
   assert.equal(COARENA_DEFAULT_MODEL, "gpt-6-luna");
 
-  const femPrompt = buildAxyaProSystemPrompt({ persona: "feminine", level: "balanced", tone: "barakah" });
-  assert.ok(femPrompt.includes("AYXA Pro Helper"));
+  const femPrompt = buildAxyaProSystemPrompt({ level: "balanced", tone: "barakah" });
+  assert.ok(femPrompt.includes("AYXA Muse Pro"));
   assert.ok(femPrompt.includes("مساعدة AYXA Pro"));
   assert.ok(!femPrompt.includes("أيكسا"));
 
-  const mascPrompt = buildAxyaProSystemPrompt({ persona: "masculine", level: "deep", tone: "action" });
-  assert.ok(mascPrompt.includes("AYXA Pro Helper"));
-  assert.ok(mascPrompt.includes("مساعد AYXA Pro"));
-  assert.ok(!mascPrompt.includes("أيكسا"));
+  const bossPrompt = buildAxyaProSystemPrompt({ level: "deep", tone: "action" });
+  assert.ok(bossPrompt.includes("THAT GIRL PRO"));
+  assert.ok(!bossPrompt.includes("أيكسا"));
 
   // Verify requestId and feedbackRating persist in normalizeAiConversation
   const convWithFeedback = normalizeAiConversation({
