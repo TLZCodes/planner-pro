@@ -7,7 +7,7 @@
  * All underlying model and provider identifiers are 100% masked from the user interface.
  */
 
-import { AI_DIALECT_OPTIONS } from "./aiVoiceEngine.ts";
+import { AI_DIALECT_OPTIONS } from "./aiDialects.ts";
 
 export const COARENA_OPENAI_BASE_URL = "https://coarena.ai/api/v1";
 export const COARENA_ANTHROPIC_BASE_URL = "https://coarena.ai/api";

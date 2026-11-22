@@ -2436,7 +2436,6 @@ export interface AiSettings {
   model?: string;
   fullAppAccess?: boolean;
   autoExecuteActions?: boolean;
-  autoVoiceReply?: boolean;
   dialect?: string;
 }
 
@@ -2448,7 +2447,6 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   model: "gpt-6-luna",
   fullAppAccess: true,
   autoExecuteActions: true,
-  autoVoiceReply: false,
   dialect: "auto",
 };
 

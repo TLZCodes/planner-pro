@@ -23,13 +23,7 @@ import {
   FREE_PRO_MODELS,
   buildAxyaProSystemPrompt,
 } from "../src/lib/coarenaClient.ts";
-import {
-  cleanTextForSpeech,
-  applyAyxaPhoneticPronunciation,
-  detectTextLanguage,
-  splitIntoSpeechChunks,
-  AI_DIALECT_OPTIONS,
-} from "../src/lib/aiVoiceEngine.ts";
+import { AI_DIALECT_OPTIONS } from "../src/lib/aiDialects.ts";
 
 test("AI Planner — Default Context Scope: strictly no personal context shared by default", () => {
   assert.equal(DEFAULT_CONTEXT_SCOPE.granted, false);
@@ -454,35 +448,6 @@ test("AI Planner — Coarena API Configuration, 3 Free Models Only, Omni-App Acc
   assert.equal(loggedWater, 500);
   assert.equal(createdHabit?.name, "Evening Skincare");
 
-  // Voice TTS cleaner strips JSON blocks and emojis cleanly & pronounces AYXA as عائشة / Aisha across all languages
-  const cleanedVoice = cleanTextForSpeech("Hello **Queen** 🌸!\n```json:ayxa_plan\n{\"proposals\":[]}\n```");
-  assert.equal(cleanedVoice, "Hello Queen !");
-
-  assert.equal(
-    cleanTextForSpeech("أهلاً بكِ يا جميلتي، أنا AYXA Muse Pro هنا لمساعدتكِ"),
-    "أهلاً بكِ يا جميلتي، أنا عائشة ميوز برو هنا لمساعدتكِ"
-  );
-  assert.equal(
-    cleanTextForSpeech("Bonjour ma belle, je suis AYXA pour organiser ta journée"),
-    "Bonjour ma belle, je suis Aïcha pour organiser ta journée"
-  );
-  assert.equal(
-    cleanTextForSpeech("¡Hola hermosa! Soy AYXA, vamos a organizar tu día"),
-    "¡Hola hermosa! Soy Aisha, vamos a organizar tu día"
-  );
-  assert.equal(
-    cleanTextForSpeech("Hallo Liebes, ich bin AYXA und plane deinen Tag"),
-    "Hallo Liebes, ich bin Aischa und plane deinen Tag"
-  );
-  assert.equal(
-    applyAyxaPhoneticPronunciation("Merhaba tatlım, ben AYXA", "tr-TR"),
-    "Merhaba tatlım, ben Aişe"
-  );
-  assert.equal(
-    cleanTextForSpeech("Hello gorgeous, I am AYXA Muse Pro"),
-    "Hello gorgeous, I am Aisha Muse Pro"
-  );
-
   // Verify requestId and feedbackRating persist in normalizeAiConversation
   const convWithFeedback = normalizeAiConversation({
     id: "conv_fb",
@@ -512,16 +477,8 @@ test("AI Planner — Coarena API Configuration, 3 Free Models Only, Omni-App Acc
   assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "es-ES"));
   assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "de-DE"));
 
-  assert.equal(detectTextLanguage("أهلاً بكِ يا جميلتي في استوديو AYXA"), "ar");
-  assert.equal(detectTextLanguage("Bonjour ma belle, voici ton programme"), "fr");
-  assert.equal(detectTextLanguage("¡Hola hermosa! Vamos a organizar tu día"), "es");
-  assert.equal(detectTextLanguage("Hallo Liebes, ich habe deinen Tag geplant"), "de");
-
   const darijaPrompt = buildAxyaProSystemPrompt({ dialect: "ar-MA" });
   assert.ok(darijaPrompt.includes("Moroccan Darija"));
-
-  const chunks = splitIntoSpeechChunks("أهلاً بكِ يا جميلتي. هذه الجملة الثانية لتجربة تقسيم النص الصوتي بنجاح.");
-  assert.ok(chunks.length >= 1);
 
   // Fuzzy title matching for completing/deleting tasks & habits + sleep/steps/sadaqah/savings
   const deletedTasks = [];
