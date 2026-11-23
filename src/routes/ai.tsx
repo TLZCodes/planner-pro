@@ -42,7 +42,6 @@ import {
   streamCoarenaChat,
   submitCoarenaFeedback,
 } from "@/lib/coarenaClient";
-import { AI_DIALECT_OPTIONS } from "@/lib/aiDialects";
 import { AiContextModal } from "@/components/ai/AiContextModal";
 import { AiPlanReviewSheet } from "@/components/ai/AiPlanReviewSheet";
 import { AiConversationsDrawer } from "@/components/ai/AiConversationsDrawer";
@@ -117,7 +116,6 @@ function AiScreen() {
   const isAr = lang === "ar";
   const activeTone: AiSettings["tone"] = state.aiSettings?.tone || "barakah";
   const activeLevel: AiSettings["level"] = state.aiSettings?.level || "balanced";
-  const activeDialect: string = state.aiSettings?.dialect || "auto";
   const fullAppAccess = state.aiSettings?.fullAppAccess !== false;
   const autoExecuteActions = state.aiSettings?.autoExecuteActions !== false;
 
@@ -309,7 +307,6 @@ function AiScreen() {
         persona: "feminine",
         level: activeLevel,
         tone: activeTone,
-        dialect: activeDialect,
         contextSummary: contextSummaryText,
         signal: controller.signal,
         onUpdate: (partialText, reqId) => {
@@ -544,9 +541,8 @@ function AiScreen() {
           </div>
         </header>
 
-        {/* Feminine Aesthetic Vibe & Dialect Ribbon (Clean 2-Row Mobile Layout) */}
-        <div className="border-b border-pink-200/40 dark:border-pink-900/30 bg-surface/40 backdrop-blur-xs px-3 py-2 shrink-0 space-y-2">
-          {/* Row 1: 3 Feminine Vibe Modes (Full Width, Zero Truncation) */}
+        {/* Feminine Aesthetic Vibe Selector Ribbon (Clean Single Row) */}
+        <div className="border-b border-pink-200/40 dark:border-pink-900/30 bg-surface/40 backdrop-blur-xs px-3 py-2 shrink-0">
           <div className="grid grid-cols-3 gap-1.5 max-w-2xl mx-auto bg-canvas/90 p-1 rounded-2xl border border-pink-200/60 dark:border-pink-900/50">
             {FEMININE_VIBE_MODES.map((vibe) => {
               const isSelected = activeTone === vibe.id;
@@ -567,44 +563,6 @@ function AiScreen() {
                 </button>
               );
             })}
-          </div>
-
-          {/* Row 2: Dialect/Language Selector + Intelligence Depth Pill */}
-          <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto">
-            <select
-              value={activeDialect}
-              onChange={(e) => updateAiSettings({ dialect: e.target.value })}
-              aria-label={isAr ? "اللهجة أو اللغة" : "Dialect or Language"}
-              className="flex-1 min-w-0 rounded-2xl border border-pink-300/60 dark:border-pink-800/50 bg-canvas/95 px-3 py-1.5 text-[11px] font-extrabold text-hotpink hover:border-hotpink focus:outline-none transition-all cursor-pointer truncate"
-              title={isAr ? "اختيار اللهجة العربية أو اللغة العالمية 🌍" : "Choose Arabic Dialect or World Language 🌍"}
-            >
-              {AI_DIALECT_OPTIONS.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.flag} {isAr ? opt.labelAr : opt.labelEn}
-                </option>
-              ))}
-            </select>
-
-            <button
-              type="button"
-              onClick={() => setShowSettingsModal(true)}
-              className="shrink-0 flex items-center gap-1 rounded-2xl border border-pink-300/50 dark:border-pink-800/50 bg-canvas/90 px-3 py-1.5 text-[11px] font-extrabold text-hotpink hover:border-hotpink transition-all cursor-pointer"
-              title={isAr ? "عمق الذكاء والتنفيذ" : "Intelligence Depth"}
-            >
-              <span>
-                {activeLevel === "saver"
-                  ? isAr
-                    ? "✨ سريع"
-                    : "✨ Spark"
-                  : activeLevel === "deep"
-                    ? isAr
-                      ? "👑 ملكي"
-                      : "👑 Royal"
-                    : isAr
-                      ? "🌷 متوازن"
-                      : "🌷 Glow"}
-              </span>
-            </button>
           </div>
         </div>
 
@@ -643,8 +601,8 @@ function AiScreen() {
                 </h2>
                 <p className="mt-1.5 text-[12px] font-medium text-ink-light max-w-md mx-auto leading-relaxed">
                   {isAr
-                    ? "وكيلتكِ الذكية المتكاملة متصلة بجميع أقسام تطبيقكِ: اكتبي لها بأي لهجة أو لغة لإضافة مهام، تسجيل عادات، شرب الماء، ترتيب الصلوات، أو تنظيم أهدافكِ وماليتكِ فوراً ♡"
-                    : "Your genius AI companion has full access to manage your entire app: write in any language or dialect to schedule tasks, log habits & water, sync prayers, or organize your goals & finances ♡"}
+                    ? "وكيلتكِ الذكية المتكاملة متصلة بجميع أقسام تطبيقكِ: اكتبي لها لإضافة مهام، تسجيل عادات، شرب الماء، ترتيب الصلوات، أو تنظيم أهدافكِ وماليتكِ فوراً ♡"
+                    : "Your genius AI companion has full access to manage your entire app: write to schedule tasks, log habits & water, sync prayers, or organize your goals & finances ♡"}
                 </p>
 
                 <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2 text-[10px] font-extrabold">

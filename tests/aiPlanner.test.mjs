@@ -23,7 +23,6 @@ import {
   FREE_PRO_MODELS,
   buildAxyaProSystemPrompt,
 } from "../src/lib/coarenaClient.ts";
-import { AI_DIALECT_OPTIONS } from "../src/lib/aiDialects.ts";
 
 test("AI Planner — Default Context Scope: strictly no personal context shared by default", () => {
   assert.equal(DEFAULT_CONTEXT_SCOPE.granted, false);
@@ -464,21 +463,6 @@ test("AI Planner — Coarena API Configuration, 3 Free Models Only, Omni-App Acc
   });
   assert.equal(convWithFeedback.messages[0].requestId, "req_test123");
   assert.equal(convWithFeedback.messages[0].feedbackRating, "good");
-
-  // Verify All Arabic Dialects & World Languages + Fuzzy Omni-App Management
-  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-MA"));
-  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-SA"));
-  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-EG"));
-  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-LB"));
-  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-AE"));
-  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-DZ"));
-  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "ar-IQ"));
-  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "fr-FR"));
-  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "es-ES"));
-  assert.ok(AI_DIALECT_OPTIONS.some((d) => d.id === "de-DE"));
-
-  const darijaPrompt = buildAxyaProSystemPrompt({ dialect: "ar-MA" });
-  assert.ok(darijaPrompt.includes("Moroccan Darija"));
 
   // Fuzzy title matching for completing/deleting tasks & habits + sleep/steps/sadaqah/savings
   const deletedTasks = [];

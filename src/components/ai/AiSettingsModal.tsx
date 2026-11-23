@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { X, Sparkles, Zap, Check, Coins, Heart, Globe } from "lucide-react";
+import { X, Sparkles, Zap, Check, Coins, Heart } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { useApp, type AiSettings, DEFAULT_AI_SETTINGS } from "@/lib/store";
-import { AI_DIALECT_OPTIONS } from "@/lib/aiDialects";
 import { cn } from "@/lib/utils";
 
 interface AiSettingsModalProps {
@@ -25,9 +24,6 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
   const [autoExecuteActions, setAutoExecuteActions] = useState<boolean>(
     currentSettings.autoExecuteActions !== false
   );
-  const [dialect, setDialect] = useState<string>(
-    currentSettings.dialect || "auto"
-  );
   const [lowCreditThreshold, setLowCreditThreshold] = useState<number>(
     currentSettings.lowCreditAlertThreshold ?? 5
   );
@@ -39,7 +35,6 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
       setTone(currentSettings.tone);
       setFullAppAccess(currentSettings.fullAppAccess !== false);
       setAutoExecuteActions(currentSettings.autoExecuteActions !== false);
-      setDialect(currentSettings.dialect || "auto");
     }
   }, [
     isOpen,
@@ -47,7 +42,6 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
     currentSettings.tone,
     currentSettings.fullAppAccess,
     currentSettings.autoExecuteActions,
-    currentSettings.dialect,
   ]);
 
   if (!isOpen) return null;
@@ -58,7 +52,6 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
       tone,
       fullAppAccess,
       autoExecuteActions,
-      dialect,
       lowCreditAlertThreshold: lowCreditThreshold,
     });
     setSavedSuccess(true);
@@ -83,8 +76,8 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
               </h3>
               <p className="text-[11px] font-medium text-ink-light">
                 {isAr
-                  ? "خصّصي أسلوب رفيقتكِ الذكية، الصلاحيات، واللهجة"
-                  : "Customize your feminine AI muse, omni-access & language"}
+                  ? "خصّصي أسلوب رفيقتكِ الذكية وصلاحيات التطبيق"
+                  : "Customize your feminine AI muse & omni-access"}
               </p>
             </div>
           </div>
@@ -214,30 +207,6 @@ export function AiSettingsModal({ isOpen, onClose }: AiSettingsModalProps) {
                 className="h-4 w-4 rounded accent-hotpink shrink-0 cursor-pointer"
               />
             </label>
-
-            {/* 3. Arabic Dialects & World Languages Selector (Text Chat) */}
-            <div className="pt-2.5 border-t border-pink-200/40 dark:border-pink-900/40 space-y-2">
-              <label className="text-xs font-bold text-ink flex items-center gap-1.5">
-                <Globe size={13} className="text-hotpink" />
-                <span>
-                  {isAr
-                    ? "اللهجة العربية أو اللغة المفضلة في الكتابة:"
-                    : "Arabic Dialect & World Language:"}
-                </span>
-              </label>
-
-              <select
-                value={dialect}
-                onChange={(e) => setDialect(e.target.value)}
-                className="w-full rounded-xl border border-pink-300/70 dark:border-pink-800/60 bg-canvas px-3 py-2 text-xs font-bold text-ink focus:border-hotpink focus:outline-none cursor-pointer"
-              >
-                {AI_DIALECT_OPTIONS.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.flag} {isAr ? opt.labelAr : opt.labelEn}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
 
           {/* Generation Depth Tiers */}

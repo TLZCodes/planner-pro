@@ -2436,7 +2436,6 @@ export interface AiSettings {
   model?: string;
   fullAppAccess?: boolean;
   autoExecuteActions?: boolean;
-  dialect?: string;
 }
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
@@ -2447,7 +2446,6 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   model: "gpt-6-luna",
   fullAppAccess: true,
   autoExecuteActions: true,
-  dialect: "auto",
 };
 
 export function getStableGuestId(): string {

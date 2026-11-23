@@ -7,8 +7,6 @@
  * All underlying model and provider identifiers are 100% masked from the user interface.
  */
 
-import { AI_DIALECT_OPTIONS } from "./aiDialects.ts";
-
 export const COARENA_OPENAI_BASE_URL = "https://coarena.ai/api/v1";
 export const COARENA_ANTHROPIC_BASE_URL = "https://coarena.ai/api";
 export const COARENA_API_KEY = "coa_2a4a92f4d109fd9ea72e9e2406545c1c";
@@ -46,10 +44,9 @@ You have full real-time visibility and management power across the user's entire
 9. Finance & Smart Money (record expenses or income entries)
 10. Brain Dump Inbox, Travel Bucket List & Business Projects (capture inbox thoughts, dream destinations, or projects)
 
-COMMUNICATION, MULTILINGUAL & ARABIC DIALECT MASTERY:
-- Address the user strictly in the feminine form at all times (in Arabic: تأمّلي، خطّطي، ابدئي، لكِ، حبيبتي، جميلتي، يسعدني مساعدتكِ; in Moroccan Darija: الزين ديالي، حبيبتي، غزالة، خطّطي، نظّمي; in Saudi/Gulf: يا قلبي، حبيبتي، أبشري، سمّي; in Egyptian: يا قمري، يا حبيبتي، من عيوني; in Levantine: تقبريني، حبيبة قلبي، تكرم عينك; in French/Spanish/German/Turkish/Italian/English: warm, sisterly, intelligent, chic, and empowering).
-- You are natively fluent in ALL Arabic dialects (Moroccan Darija 🇲🇦, Saudi/Khaleeji 🇸🇦, Egyptian 🇪🇬, Levantine/Lebanese/Syrian 🇱🇧, Emirati 🇦🇪, Algerian/Tunisian 🇩🇿, Iraqi 🇮🇶, and Modern Standard Arabic Fusha 🕌) as well as ALL international languages (French 🇫🇷, Spanish 🇪🇸, German 🇩🇪, Turkish 🇹🇷, Italian 🇮🇹, English 🇺🇸, etc.).
-- When the user writes in any dialect or language (or requests a specific dialect/language), reply naturally and authentically in that exact dialect or language while keeping your luxury feminine aesthetic vibe!
+COMMUNICATION & MULTILINGUAL EXCELLENCE:
+- Address the user strictly in the feminine form at all times (in Arabic: تأمّلي، خطّطي، ابدئي، لكِ، حبيبتي، جميلتي، يسعدني مساعدتكِ; in English, French, Spanish, German, etc.: warm, sisterly, intelligent, chic, and empowering).
+- Automatically reply in the exact language the user writes in (elegant Modern Standard Arabic when she writes in Arabic, or fluent English, French, Spanish, German, Turkish, Italian, etc.).
 - Think deeply and proactively: analyze her live planner state (her open tasks, habits, water intake, prayer times, goals) to give hyper-personalized, genius advice rather than generic tips.
 - Format your responses with elegance: clear sections, bold highlights, and aesthetic emojis (🌸, ✨, 🤍, 🌷, 👑, 🌙).
 
@@ -131,18 +128,11 @@ export function buildAxyaProSystemPrompt(options: {
   persona?: string;
   level?: "saver" | "balanced" | "deep";
   tone?: "gentle" | "action" | "barakah";
-  dialect?: string;
   contextSummary?: string;
 }): string {
-  const { level = "balanced", tone = "barakah", dialect = "auto", contextSummary } = options;
+  const { level = "balanced", tone = "barakah", contextSummary } = options;
 
   let combinedSystem = AXYA_PRO_SYSTEM_PROMPT;
-
-  const selectedDialectObj =
-    AI_DIALECT_OPTIONS.find((d) => d.id === dialect) || AI_DIALECT_OPTIONS[0];
-  if (selectedDialectObj) {
-    combinedSystem += `\n\nLANGUAGE & DIALECT PREFERENCE (${selectedDialectObj.labelEn}):\n${selectedDialectObj.promptInstruction}`;
-  }
 
   if (level === "saver") {
     combinedSystem += `\n\nRESPONSE DEPTH (QUICK SPARK MODE - CONCISE & ELEGANT):\nKeep responses high-value, crisp, and organized in chic bullet points with immediate actionable proposals.`;
@@ -229,7 +219,6 @@ export async function streamCoarenaChat(params: {
   persona?: string;
   level?: "saver" | "balanced" | "deep";
   tone?: "gentle" | "action" | "barakah";
-  dialect?: string;
   model?: string;
   contextSummary?: string;
   signal?: AbortSignal;
@@ -239,7 +228,6 @@ export async function streamCoarenaChat(params: {
     messages,
     level = "balanced",
     tone = "barakah",
-    dialect = "auto",
     contextSummary,
     signal,
     onUpdate,
@@ -248,7 +236,6 @@ export async function streamCoarenaChat(params: {
   const systemPrompt = buildAxyaProSystemPrompt({
     level,
     tone,
-    dialect,
     contextSummary,
   });
 
