@@ -462,57 +462,52 @@ function AiScreen() {
     FEMININE_VIBE_MODES.find((v) => v.id === activeTone) || FEMININE_VIBE_MODES[2];
 
   return (
-    <MobileShell hideFooter>
-      <div className="flex h-screen max-h-screen flex-col bg-canvas text-ink overflow-hidden">
-        {/* Luxury Aesthetic Header */}
-        <header className="flex items-center justify-between border-b border-pink-200/50 dark:border-pink-900/40 bg-card/95 backdrop-blur-md px-3.5 py-3 shadow-2xs shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
+    <MobileShell hideFooter hideTabs>
+      <div className="flex h-[100dvh] max-h-[100dvh] flex-col bg-canvas text-ink overflow-hidden">
+        {/* Luxury Aesthetic Header (Overflow-safe on 360px–430px mobile) */}
+        <header className="flex items-center justify-between gap-2 border-b border-pink-200/50 dark:border-pink-900/40 bg-card/95 backdrop-blur-md px-3 py-2.5 shadow-2xs shrink-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
             <button
               onClick={handleBack}
               aria-label="Back"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 border border-pink-200/60 dark:border-pink-800/50 text-ink shadow-2xs hover:border-hotpink active:scale-90 transition-all shrink-0 cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 border border-pink-200/60 dark:border-pink-800/50 text-ink shadow-2xs hover:border-hotpink active:scale-90 transition-all shrink-0 cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
             </button>
 
             <div className="relative shrink-0">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-600 text-lg text-white shadow-rose">
+              <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-600 text-base text-white shadow-rose">
                 🌸
               </span>
-              <span className="absolute -bottom-0.5 -end-0.5 h-3 w-3 rounded-full border-2 border-card bg-emerald-400" />
+              <span className="absolute -bottom-0.5 -end-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-emerald-400" />
             </div>
 
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h1 className="font-display text-sm sm:text-base font-extrabold text-ink leading-tight truncate">
-                  {isAr ? "مساعدة AYXA Muse Pro" : "AYXA Muse Pro"}
-                </h1>
-                <span className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-500/20 to-fuchsia-500/20 border border-pink-400/40 px-2 py-0.5 text-[9px] font-extrabold text-hotpink uppercase tracking-wider shrink-0">
-                  OMNI ✨
-                </span>
-              </div>
-              <p className="text-[11px] font-medium text-ink-light truncate mt-0.5">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <h1 className="font-display text-sm font-extrabold text-ink leading-tight truncate">
+                {isAr ? "AYXA Muse Pro ✨" : "AYXA Muse Pro ✨"}
+              </h1>
+              <p className="text-[10.5px] font-medium text-ink-light truncate mt-0.5">
                 {isGenerating
                   ? isAr
                     ? "تنسّق وتدير تطبيقكِ بكل ذكاء..."
-                    : "Managing your planner with grace..."
+                    : "Managing your planner..."
                   : isAr
-                    ? "تحكم ذكي شامل بمخططكِ بكل اللغات واللهجات ♡"
-                    : "Full app intelligence & glow companion ♡"}
+                    ? "رفيقتكِ الذكية لإدارة مخططكِ ♡"
+                    : "Your AI planner companion ♡"}
               </p>
             </div>
           </div>
 
           {/* Header Action Icons */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             {/* Glow Credits Pill */}
             <button
               type="button"
               onClick={() => setShowCreditsModal(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-pink-500/15 to-amber-500/15 border border-pink-300/60 dark:border-pink-800/60 text-hotpink text-xs font-extrabold hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-pink-500/15 to-amber-500/15 border border-pink-300/60 dark:border-pink-800/60 text-hotpink text-[11px] font-extrabold hover:scale-105 active:scale-95 transition-all cursor-pointer"
               title={isAr ? "رصيد نقاطكِ" : "Your Glow Credits"}
             >
-              <Sparkles size={11} className="text-hotpink" />
+              <Sparkles size={11} className="text-hotpink shrink-0" />
               <span>{state.aiCredits ?? 50}</span>
             </button>
 
@@ -523,7 +518,7 @@ function AiScreen() {
               aria-label={isAr ? "المحادثات السابقة" : "Saved conversations"}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-pink-200/60 dark:border-pink-900/50 bg-surface/80 text-ink-light hover:text-hotpink transition-colors cursor-pointer"
             >
-              <MessageSquare size={15} />
+              <MessageSquare size={14} />
             </button>
 
             {/* AI Studio Settings Button */}
@@ -534,7 +529,7 @@ function AiScreen() {
               className="flex h-8 w-8 items-center justify-center rounded-full border border-pink-200/60 dark:border-pink-900/50 bg-surface/80 text-ink-light hover:text-hotpink transition-colors cursor-pointer"
               title={isAr ? "إعدادات الاستوديو والصلاحيات ⚙️" : "Studio & Omni-Access Settings ⚙️"}
             >
-              <Sliders size={15} />
+              <Sliders size={14} />
             </button>
 
             {/* New Conversation Button */}
@@ -544,41 +539,43 @@ function AiScreen() {
               aria-label={isAr ? "محادثة جديدة" : "New conversation"}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-rose hover:opacity-90 active:scale-90 transition-all cursor-pointer"
             >
-              <Plus size={16} />
+              <Plus size={15} />
             </button>
           </div>
         </header>
 
-        {/* Feminine Aesthetic Vibe Selector Ribbon */}
-        <div className="border-b border-pink-200/40 dark:border-pink-900/30 bg-surface/40 backdrop-blur-xs px-4 py-2 shrink-0">
-          <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto">
-            <div className="grid grid-cols-3 gap-1.5 flex-1 bg-canvas/90 p-1 rounded-2xl border border-pink-200/60 dark:border-pink-900/50">
-              {FEMININE_VIBE_MODES.map((vibe) => {
-                const isSelected = activeTone === vibe.id;
-                return (
-                  <button
-                    key={vibe.id}
-                    type="button"
-                    onClick={() => updateAiSettings({ tone: vibe.id })}
-                    className={cn(
-                      "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer truncate",
-                      isSelected
-                        ? "bg-gradient-to-r from-pink-500 via-rose-500 to-fuchsia-600 text-white shadow-rose"
-                        : "text-ink-light hover:text-ink hover:bg-surface/60"
-                    )}
-                  >
-                    <span className="text-xs shrink-0">{vibe.emoji}</span>
-                    <span className="truncate">{isAr ? vibe.labelAr : vibe.labelEn}</span>
-                  </button>
-                );
-              })}
-            </div>
+        {/* Feminine Aesthetic Vibe & Dialect Ribbon (Clean 2-Row Mobile Layout) */}
+        <div className="border-b border-pink-200/40 dark:border-pink-900/30 bg-surface/40 backdrop-blur-xs px-3 py-2 shrink-0 space-y-2">
+          {/* Row 1: 3 Feminine Vibe Modes (Full Width, Zero Truncation) */}
+          <div className="grid grid-cols-3 gap-1.5 max-w-2xl mx-auto bg-canvas/90 p-1 rounded-2xl border border-pink-200/60 dark:border-pink-900/50">
+            {FEMININE_VIBE_MODES.map((vibe) => {
+              const isSelected = activeTone === vibe.id;
+              return (
+                <button
+                  key={vibe.id}
+                  type="button"
+                  onClick={() => updateAiSettings({ tone: vibe.id })}
+                  className={cn(
+                    "flex items-center justify-center gap-1 py-1.5 px-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap",
+                    isSelected
+                      ? "bg-gradient-to-r from-pink-500 via-rose-500 to-fuchsia-600 text-white shadow-rose"
+                      : "text-ink-light hover:text-ink hover:bg-surface/60"
+                  )}
+                >
+                  <span className="text-xs shrink-0">{vibe.emoji}</span>
+                  <span className="truncate">{isAr ? vibe.labelAr : vibe.labelEn}</span>
+                </button>
+              );
+            })}
+          </div>
 
+          {/* Row 2: Dialect/Language Selector + Intelligence Depth Pill */}
+          <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto">
             <select
               value={activeDialect}
               onChange={(e) => updateAiSettings({ dialect: e.target.value })}
               aria-label={isAr ? "اللهجة أو اللغة" : "Dialect or Language"}
-              className="shrink-0 max-w-[125px] sm:max-w-[160px] rounded-2xl border border-pink-300/60 dark:border-pink-800/50 bg-canvas/95 px-2.5 py-2 text-[10px] font-extrabold text-hotpink hover:border-hotpink focus:outline-none transition-all cursor-pointer truncate"
+              className="flex-1 min-w-0 rounded-2xl border border-pink-300/60 dark:border-pink-800/50 bg-canvas/95 px-3 py-1.5 text-[11px] font-extrabold text-hotpink hover:border-hotpink focus:outline-none transition-all cursor-pointer truncate"
               title={isAr ? "اختيار اللهجة العربية أو اللغة العالمية 🌍" : "Choose Arabic Dialect or World Language 🌍"}
             >
               {AI_DIALECT_OPTIONS.map((opt) => (
@@ -591,7 +588,7 @@ function AiScreen() {
             <button
               type="button"
               onClick={() => setShowSettingsModal(true)}
-              className="shrink-0 flex items-center gap-1 rounded-2xl border border-pink-300/50 dark:border-pink-800/50 bg-canvas/90 px-2.5 py-2 text-[10px] font-extrabold text-hotpink hover:border-hotpink transition-all cursor-pointer"
+              className="shrink-0 flex items-center gap-1 rounded-2xl border border-pink-300/50 dark:border-pink-800/50 bg-canvas/90 px-3 py-1.5 text-[11px] font-extrabold text-hotpink hover:border-hotpink transition-all cursor-pointer"
               title={isAr ? "عمق الذكاء والتنفيذ" : "Intelligence Depth"}
             >
               <span>
@@ -845,7 +842,10 @@ function AiScreen() {
                       </div>
                     )}
 
-                    <div className="prose prose-sm max-w-none text-inherit leading-relaxed [&_li]:my-1 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:ps-5 [&_p]:my-1.5 [&_strong]:font-extrabold [&_strong]:text-hotpink [&_ul]:my-2 [&_ul]:list-disc [&_ul]:ps-5 [&_ul]:marker:text-hotpink">
+                    <div
+                      dir="auto"
+                      className="prose prose-sm max-w-none text-inherit leading-relaxed [&_li]:my-1 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:ps-5 [&_p]:my-1.5 [&_strong]:font-extrabold [&_strong]:text-hotpink [&_ul]:my-2 [&_ul]:list-disc [&_ul]:ps-5 [&_ul]:marker:text-hotpink"
+                    >
                       <ReactMarkdown>{displayText}</ReactMarkdown>
                     </div>
 
