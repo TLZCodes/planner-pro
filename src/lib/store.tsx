@@ -159,6 +159,11 @@ import {
   normalizeAiConversation,
   normalizeAiContextConsent,
 } from "./aiPlannerEngine";
+import {
+  type ProSubscriptionState,
+  initializeBilling,
+  checkProEntitlement,
+} from "./billingEngine";
 
 import {
   DEFAULT_BUSINESS_PROFILE,
@@ -2426,6 +2431,7 @@ export type AppState = {
   aiCredits?: number;
   aiPersona?: "feminine" | "masculine";
   aiSettings?: AiSettings;
+  proSubscription?: ProSubscriptionState;
 };
 
 export interface AiSettings {
@@ -3249,6 +3255,7 @@ type Ctx = {
   addAiCredits: (amount: number, reason?: string) => void;
   setAiPersona: (persona: "feminine" | "masculine") => void;
   updateAiSettings: (settings: Partial<AiSettings>) => void;
+  setProSubscription: (sub: ProSubscriptionState) => void;
 };
 
 const AppContext = createContext<Ctx | null>(null);
@@ -10184,6 +10191,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       useAiCredit: (amount = 1) => {
         let success = false;
         update((s) => {
+          // AYXA Pro subscribers enjoy unlimited AYXA Muse Pro AI messages
+          if (s.user?.isPro || s.proSubscription?.isPro) {
+            success = true;
+            return s;
+          }
           const current = typeof s.aiCredits === "number" ? s.aiCredits : 50;
           if (current >= amount) {
             success = true;
@@ -10223,9 +10235,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
           },
         }));
       },
+
+      setProSubscription: (sub: ProSubscriptionState) => {
+        update((s) => ({
+          ...s,
+          proSubscription: sub,
+          user: {
+            ...s.user,
+            isPro: Boolean(sub.isPro),
+          },
+        }));
+      },
     }),
     [state, update, withAchievements],
   );
+
+  // Sync live Google Play / App Store Pro entitlement on native startup
+  useEffect(() => {
+    let mounted = true;
+    void (async () => {
+      const ready = await initializeBilling(state.user?.id);
+      if (!ready || !mounted) return;
+      const liveSub = await checkProEntitlement();
+      if (liveSub && mounted) {
+        update((s) => ({
+          ...s,
+          proSubscription: liveSub,
+          user: {
+            ...s.user,
+            isPro: Boolean(liveSub.isPro),
+          },
+        }));
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [state.user?.id]);
 
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

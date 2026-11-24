@@ -39,9 +39,12 @@ import {
   Info,
   Layers,
   Sparkle,
+  Crown,
 } from "lucide-react";
 import { MobileShell } from "@/components/MobileShell";
 import { Screen, GlassCard, PillTag, GradientButton } from "@/components/kit";
+import { ProPaywallModal } from "@/components/billing/ProPaywallModal";
+import { isThemeLocked } from "@/lib/billingEngine";
 import {
   useApp,
   THEME_PRESETS,
@@ -204,6 +207,9 @@ function SettingsPage() {
   const { state, setPrefs, updateUser, resetData } = useApp();
   const { t, lang, setLang } = useLang();
   const isAr = lang === "ar";
+  const isPro = Boolean(state.user?.isPro || state.proSubscription?.isPro);
+  const [proPaywallOpen, setProPaywallOpen] = useState(false);
+  const [proPaywallFeature, setProPaywallFeature] = useState<string | undefined>(undefined);
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -1056,11 +1062,17 @@ function SettingsPage() {
               <div className="mt-3.5 grid grid-cols-3 gap-2.5">
                 {THEME_PRESETS.map((tItem) => {
                   const isSelected = (prefs.theme || "rose") === tItem.name;
+                  const locked = isThemeLocked(tItem.name, isPro);
                   return (
                     <button
                       type="button"
                       key={tItem.name}
                       onClick={() => {
+                        if (locked) {
+                          setProPaywallFeature(isAr ? `ثيم ${tItem.nameAr}` : `${tItem.nameEn} Luxury Theme`);
+                          setProPaywallOpen(true);
+                          return;
+                        }
                         setPrefs({ theme: tItem.name });
                         document.documentElement.style.setProperty("--theme-from", tItem.from);
                         document.documentElement.style.setProperty("--theme-to", tItem.to);
@@ -1073,6 +1085,11 @@ function SettingsPage() {
                           : "border-border bg-surface hover:border-pink-300",
                       )}
                     >
+                      {locked && (
+                        <span className="absolute top-1.5 end-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400/20 text-amber-500">
+                          <Crown size={10} />
+                        </span>
+                      )}
                       <div
                         className="h-8 w-8 rounded-full shadow-inner border border-white dark:border-pink-950 flex items-center justify-center"
                         style={{
@@ -2591,6 +2608,11 @@ function SettingsPage() {
             </div>
           </div>
         )}
+        <ProPaywallModal
+          isOpen={proPaywallOpen}
+          onClose={() => setProPaywallOpen(false)}
+          sourceFeature={proPaywallFeature}
+        />
       </Screen>
     </MobileShell>
   );

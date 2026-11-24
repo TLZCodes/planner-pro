@@ -48,6 +48,7 @@ import { AiConversationsDrawer } from "@/components/ai/AiConversationsDrawer";
 import { AiProposalCard } from "@/components/ai/AiProposalCard";
 import { AiCreditsModal } from "@/components/ai/AiCreditsModal";
 import { AiSettingsModal } from "@/components/ai/AiSettingsModal";
+import { ProPaywallModal } from "@/components/billing/ProPaywallModal";
 
 export const Route = createFileRoute("/ai")({
   head: () => ({
@@ -114,6 +115,7 @@ function AiScreen() {
   } = appStore;
 
   const isAr = lang === "ar";
+  const isPro = Boolean(state.user?.isPro || state.proSubscription?.isPro);
   const activeTone: AiSettings["tone"] = state.aiSettings?.tone || "barakah";
   const activeLevel: AiSettings["level"] = state.aiSettings?.level || "balanced";
   const fullAppAccess = state.aiSettings?.fullAppAccess !== false;
@@ -149,6 +151,7 @@ function AiScreen() {
   const [ratingToastId, setRatingToastId] = useState<string | null>(null);
   const [showContextModal, setShowContextModal] = useState(false);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [showProPaywall, setShowProPaywall] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
   const [templatesExpanded, setTemplatesExpanded] = useState(false);
@@ -257,17 +260,19 @@ function AiScreen() {
     const trimmed = text.trim();
     if (!trimmed || isGenerating) return;
 
-    const cost = activeLevel === "deep" ? 2 : 1;
-    const currentCredits = typeof state.aiCredits === "number" ? state.aiCredits : 50;
-    if (currentCredits < cost) {
-      setShowCreditsModal(true);
-      return;
-    }
+    if (!isPro) {
+      const cost = activeLevel === "deep" ? 2 : 1;
+      const currentCredits = typeof state.aiCredits === "number" ? state.aiCredits : 50;
+      if (currentCredits < cost) {
+        setShowProPaywall(true);
+        return;
+      }
 
-    const deducted = useAiCredit(cost);
-    if (!deducted) {
-      setShowCreditsModal(true);
-      return;
+      const deducted = useAiCredit(cost);
+      if (!deducted) {
+        setShowProPaywall(true);
+        return;
+      }
     }
 
     setCustomError(null);
@@ -497,15 +502,15 @@ function AiScreen() {
 
           {/* Header Action Icons */}
           <div className="flex items-center gap-1 shrink-0">
-            {/* Glow Credits Pill */}
+            {/* Glow Credits / AYXA Pro Pill */}
             <button
               type="button"
-              onClick={() => setShowCreditsModal(true)}
+              onClick={() => setShowProPaywall(true)}
               className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-pink-500/15 to-amber-500/15 border border-pink-300/60 dark:border-pink-800/60 text-hotpink text-[11px] font-extrabold hover:scale-105 active:scale-95 transition-all cursor-pointer"
-              title={isAr ? "رصيد نقاطكِ" : "Your Glow Credits"}
+              title={isPro ? "AYXA Pro Unlimited 👑" : isAr ? "الترقية إلى AYXA Pro 👑" : "Upgrade to AYXA Pro 👑"}
             >
               <Sparkles size={11} className="text-hotpink shrink-0" />
-              <span>{state.aiCredits ?? 50}</span>
+              <span>{isPro ? "PRO ∞" : (state.aiCredits ?? 50)}</span>
             </button>
 
             {/* Saved Chats Drawer Button */}
@@ -973,6 +978,12 @@ function AiScreen() {
         <AiCreditsModal
           isOpen={showCreditsModal}
           onClose={() => setShowCreditsModal(false)}
+        />
+
+        <ProPaywallModal
+          isOpen={showProPaywall}
+          onClose={() => setShowProPaywall(false)}
+          sourceFeature={isAr ? "مساعدة AYXA Muse Pro بلا حدود" : "Unlimited AYXA Muse Pro AI"}
         />
 
         <AiContextModal

@@ -33,6 +33,7 @@ import { Route as MoreRouteImport } from './routes/more'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as PixelsRouteImport } from './routes/pixels'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as RoutinesRouteImport } from './routes/routines'
 import { Route as SelfCareRouteImport } from './routes/self-care'
@@ -41,6 +42,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TravelRouteImport } from './routes/travel'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as WellnessRouteImport } from './routes/wellness'
@@ -174,6 +176,11 @@ const PixelsRoute = PixelsRouteImport.update({
   path: '/pixels',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgressRoute = ProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
@@ -212,6 +219,11 @@ const SignupRoute = SignupRouteImport.update({
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TravelRoute = TravelRouteImport.update({
@@ -300,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/overview': typeof OverviewRoute
   '/pixels': typeof PixelsRoute
+  '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
   '/routines': typeof RoutinesRoute
   '/self-care': typeof SelfCareRoute
@@ -308,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/tasks': typeof TasksRoute
+  '/terms': typeof TermsRoute
   '/travel': typeof TravelRoute
   '/welcome': typeof WelcomeRoute
   '/wellness': typeof WellnessRoute
@@ -346,6 +360,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/overview': typeof OverviewRoute
   '/pixels': typeof PixelsRoute
+  '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
   '/routines': typeof RoutinesRoute
   '/self-care': typeof SelfCareRoute
@@ -354,6 +369,7 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/tasks': typeof TasksRoute
+  '/terms': typeof TermsRoute
   '/travel': typeof TravelRoute
   '/welcome': typeof WelcomeRoute
   '/wellness': typeof WellnessRoute
@@ -393,6 +409,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/overview': typeof OverviewRoute
   '/pixels': typeof PixelsRoute
+  '/privacy': typeof PrivacyRoute
   '/progress': typeof ProgressRoute
   '/routines': typeof RoutinesRoute
   '/self-care': typeof SelfCareRoute
@@ -401,6 +418,7 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/signup': typeof SignupRoute
   '/tasks': typeof TasksRoute
+  '/terms': typeof TermsRoute
   '/travel': typeof TravelRoute
   '/welcome': typeof WelcomeRoute
   '/wellness': typeof WellnessRoute
@@ -441,6 +459,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/overview'
     | '/pixels'
+    | '/privacy'
     | '/progress'
     | '/routines'
     | '/self-care'
@@ -449,6 +468,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/tasks'
+    | '/terms'
     | '/travel'
     | '/welcome'
     | '/wellness'
@@ -487,6 +507,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/overview'
     | '/pixels'
+    | '/privacy'
     | '/progress'
     | '/routines'
     | '/self-care'
@@ -495,6 +516,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/tasks'
+    | '/terms'
     | '/travel'
     | '/welcome'
     | '/wellness'
@@ -533,6 +555,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/overview'
     | '/pixels'
+    | '/privacy'
     | '/progress'
     | '/routines'
     | '/self-care'
@@ -541,6 +564,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signup'
     | '/tasks'
+    | '/terms'
     | '/travel'
     | '/welcome'
     | '/wellness'
@@ -580,6 +604,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   OverviewRoute: typeof OverviewRoute
   PixelsRoute: typeof PixelsRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProgressRoute: typeof ProgressRoute
   RoutinesRoute: typeof RoutinesRoute
   SelfCareRoute: typeof SelfCareRoute
@@ -588,6 +613,7 @@ export interface RootRouteChildren {
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
   TasksRoute: typeof TasksRoute
+  TermsRoute: typeof TermsRoute
   TravelRoute: typeof TravelRoute
   WelcomeRoute: typeof WelcomeRoute
   WellnessRoute: typeof WellnessRoute
@@ -772,6 +798,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PixelsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/progress': {
       id: '/progress'
       path: '/progress'
@@ -826,6 +859,13 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/travel': {
@@ -940,6 +980,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   OverviewRoute: OverviewRoute,
   PixelsRoute: PixelsRoute,
+  PrivacyRoute: PrivacyRoute,
   ProgressRoute: ProgressRoute,
   RoutinesRoute: RoutinesRoute,
   SelfCareRoute: SelfCareRoute,
@@ -948,6 +989,7 @@ const rootRouteChildren: RootRouteChildren = {
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
   TasksRoute: TasksRoute,
+  TermsRoute: TermsRoute,
   TravelRoute: TravelRoute,
   WelcomeRoute: WelcomeRoute,
   WellnessRoute: WellnessRoute,

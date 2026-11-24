@@ -22,9 +22,11 @@ import {
   Bookmark,
   Compass,
   Moon,
+  Crown,
 } from "lucide-react";
 import { MobileShell } from "@/components/MobileShell";
 import { Screen, ProgressBar } from "@/components/kit";
+import { ProPaywallModal } from "@/components/billing/ProPaywallModal";
 import { useApp } from "@/lib/store";
 import { useLang } from "@/lib/i18n";
 import { getProgressionOverview } from "@/lib/progressionEngine";
@@ -56,9 +58,15 @@ function ExplorePage() {
   const navigate = useNavigate();
 
   const isAr = lang === "ar";
+  const isPro = Boolean(state.user?.isPro || state.proSubscription?.isPro);
   const xp = state.xp || 0;
   const overview = getProgressionOverview(xp);
   const unlockedBadgesCount = (state.unlockedBadges || []).length;
+
+  // Pro Paywall Modal State
+  const [paywallState, setPaywallState] = useState<{ open: boolean; feature?: string }>({
+    open: false,
+  });
 
   // Search & Filter State
   const [searchOpen, setSearchOpen] = useState(false);
@@ -219,8 +227,15 @@ function ExplorePage() {
     });
   }, [searchQuery, selectedCategory]);
 
-  // Navigate & Track
+  // Navigate & Track (Gate premium studios for free users)
   const handleModuleClick = (mod: ModuleDefinition) => {
+    if (!isPro && (mod.id === "business" || mod.id === "travel")) {
+      setPaywallState({
+        open: true,
+        feature: isAr ? mod.titleAr : mod.titleEn,
+      });
+      return;
+    }
     trackModuleVisit(mod.id);
     if (mod.canonicalRoute.includes("?")) {
       const [path, queryString] = mod.canonicalRoute.split("?");
@@ -438,6 +453,42 @@ function ExplorePage() {
               </div>
             </div>
           </div>
+
+          {/* Luxury AYXA Pro Membership Banner */}
+          <button
+            type="button"
+            onClick={() => setPaywallState({ open: true })}
+            className="mt-3.5 w-full text-start rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-fuchsia-600 p-3.5 text-white shadow-rose hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-xs">
+                <Crown size={20} className="text-amber-200" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-extrabold truncate">
+                  {isPro
+                    ? isAr
+                      ? "عضوية AYXA Pro الملكية مفعّلة 👑"
+                      : "AYXA Pro Royal Membership Active 👑"
+                    : isAr
+                      ? "ترقّي إلى AYXA Pro — تجربة مجانية 7 أيام ✨"
+                      : "Upgrade to AYXA Pro — 7-Day Free Trial ✨"}
+                </p>
+                <p className="text-[10.5px] text-pink-100 truncate mt-0.5">
+                  {isPro
+                    ? isAr
+                      ? "ذكاء اصطناعي بلا حدود · جميع الثيمات · الأعمال والسفر"
+                      : "Unlimited AI · All Luxury Themes · Business & Travel"
+                    : isAr
+                      ? "افتحي الذكاء الاصطناعي بلا حدود، الثيمات، والأعمال والسفر"
+                      : "Unlock Unlimited AI, Luxury Themes, Business & Travel"}
+                </p>
+              </div>
+            </div>
+            <span className="shrink-0 rounded-full bg-white text-hotpink px-3 py-1 text-[11px] font-black shadow-xs">
+              {isPro ? (isAr ? "نشط ✓" : "Active ✓") : isAr ? "ترقية" : "Upgrade"}
+            </span>
+          </button>
         </div>
 
         {/* ═════════════════════════════════════════════════════════════════════ */}
@@ -939,6 +990,11 @@ function ExplorePage() {
             </div>
           </div>
         )}
+        <ProPaywallModal
+          isOpen={paywallState.open}
+          onClose={() => setPaywallState({ open: false })}
+          sourceFeature={paywallState.feature}
+        />
       </Screen>
     </MobileShell>
   );
