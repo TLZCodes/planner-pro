@@ -46,6 +46,7 @@ const htmlContent = `<!DOCTYPE html>
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>AYXA Planner Pro — Daily Productivity & Habit Tracker</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
     ${cssEntry ? `<link rel="stylesheet" href="/assets/${cssEntry}">` : ''}
   </head>
   <body>
